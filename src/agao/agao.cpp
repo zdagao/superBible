@@ -23,17 +23,15 @@ class agao_app : public sb6::application
 		{
 			"#version 330 core														\n"
 			"																		\n"
-			"layout (location = 0) in vec4 offset; 									\n"
+			"layout (location = 0) in vec4 position; 								\n"
+			"uniform mat4 mv_matrix;													\n"
+			"uniform mat4 proj_matrix;												\n"
 			"layout (location = 1) in vec4 color;  									\n"
 			"out vec4 vs_color; 														\n"
 			"void main(void)														\n"
 			"{																		\n"
-			"     const vec4 vertices[3] = vec4[3](vec4(0.0, 0.0, 0.5, 1.0), 		\n" 
-			"     									vec4(-0.5, 0.5, 0.5, 1.0),	\n"                                  
-			"									     vec4(1.0, 1.0, 0.5, 1.0));	\n"
-			" int flag = (gl_VertexID == 1) ? -1 : 1;							 \n"
-			//"	 gl_Position = vec4(0.0 + gl_VertexID/2.0*flag, 0.0 + gl_VertexID/2.0, 0.5, 1.0);								\n"
-			"	 gl_Position = vertices[gl_VertexID] + offset;								\n"
+			"	gl_Position = proj_matrix * mv_matrix * position;	 				\n"
+			//"	gl_Position = position;					\n"
 			"	vs_color = color;													\n"
 			"}																		\n"
 		};
@@ -44,10 +42,14 @@ class agao_app : public sb6::application
             "                                                                       \n"
             "in vec4 vs_color;														\n"
             "out vec4 color;                                 						\n"
+            "uniform sampler2D tex_object; 											\n"
+			"uniform ivec2 wsize;													\n"
             "                                                                       \n"
             "void main(void)                                                        \n"
             "{                                                                      \n"
-            "    color = vs_color;					   								\n"
+            //"    color = texelFetch(tex_object, ivec2(gl_FragCoord.x*16/wsize.x, gl_FragCoord.y*16/wsize.y), 0);			\n"
+            "    color = texture(tex_object, gl_FragCoord.xy / textureSize(tex_object, 0));			\n"
+			//"	 color = vs_color; 		\n"
             "}                                                                      \n"
         };
 
@@ -77,14 +79,103 @@ class agao_app : public sb6::application
 		glDeleteShader(vs);
 		glDeleteShader(fs);
 
+		//generate and bind vertex array object.
         glGenVertexArrays(1, &render_vao);
         glBindVertexArray(render_vao);
+
+		GLuint buf;
+
+		//generate and bind buffer object
+		glGenBuffers(1, &buf);
+		glBindBuffer(GL_ARRAY_BUFFER, buf);
+
+		static const GLfloat vertex_positions[] =
+		{
+			-0.25f, 0.25f, -0.25f,
+			-0.25f, -0.25f, -0.25f,
+			0.25f, -0.25f, -0.25f,
+			
+			0.25f, -0.25f, -0.25f,
+			0.25f, 0.25f, -0.25f,
+			-0.25f, 0.25f, -0.25f,
+			
+			-0.25f, 0.25f, 0.25f,
+			-0.25f, -0.25f, 0.25f,
+			0.25f, -0.25f, 0.25f,
+			
+			0.25f, -0.25f, 0.25f,
+			0.25f, 0.25f, 0.25f,
+			-0.25f, 0.25f, 0.25f,
+
+			-0.25f, -0.25f, -0.25f,
+			0.25f, -0.25f, -0.25f,
+			0.25f, -0.25f, 0.25f,
+			
+			0.25f, -0.25f, 0.25f,
+			-0.25f, -0.25f, 0.25f,
+			-0.25f, -0.25f, -0.25f,
+			
+			-0.25f, 0.25f, -0.25f,
+			0.25f, 0.25f, -0.25f,
+			0.25f, 0.25f, 0.25f,
+			
+			0.25f, 0.25f, 0.25f,
+			-0.25f, 0.25f, 0.25f,
+			-0.25f, 0.25f, -0.25f,
+		};
+
+		//alloc memory for the buffer.
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_positions), vertex_positions, GL_DYNAMIC_DRAW);
+		
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+
+		glEnableVertexAttribArray(0);
+
+#define B 0x00, 0x00, 0x00, 0x00
+#define W 0xFF, 0xFF, 0xFF, 0xFF
+		static const GLubyte tex_data[] =
+		{
+			B, W, B, W, B, W, B, W, B, W, B, W, B, W, B, W,
+			W, B, W, B, W, B, W, B, W, B, W, B, W, B, W, B,
+			B, W, B, W, B, W, B, W, B, W, B, W, B, W, B, W,
+			W, B, W, B, W, B, W, B, W, B, W, B, W, B, W, B,
+			B, W, B, W, B, W, B, W, B, W, B, W, B, W, B, W,
+			W, B, W, B, W, B, W, B, W, B, W, B, W, B, W, B,
+			B, W, B, W, B, W, B, W, B, W, B, W, B, W, B, W,
+			W, B, W, B, W, B, W, B, W, B, W, B, W, B, W, B,
+			B, W, B, W, B, W, B, W, B, W, B, W, B, W, B, W,
+			W, B, W, B, W, B, W, B, W, B, W, B, W, B, W, B,
+			B, W, B, W, B, W, B, W, B, W, B, W, B, W, B, W,
+			W, B, W, B, W, B, W, B, W, B, W, B, W, B, W, B,
+			B, W, B, W, B, W, B, W, B, W, B, W, B, W, B, W,
+			W, B, W, B, W, B, W, B, W, B, W, B, W, B, W, B,
+			B, W, B, W, B, W, B, W, B, W, B, W, B, W, B, W,
+			W, B, W, B, W, B, W, B, W, B, W, B, W, B, W, B,
+		};
+#undef B
+#undef W
+		
+		glGenTextures(1, &tex_object[0]);
+		glBindTexture(GL_TEXTURE_2D, tex_object[0]);
+		glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, 16, 16);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 16, 16, GL_RGBA, GL_UNSIGNED_BYTE, tex_data);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+		
+        // Generate a name for the texture
+        glGenTextures(1, &tex_object[1]);
+
+		unsigned int ret = sb6::ktx::file::load("../bin/media/textures/brick.ktx", tex_object[1]);
+		if (0 == ret) {
+			fprintf(stderr, "load texture failed.\n");
+		}
 	}
 
     void render(double currentTime)
     {
     	// Simply clear the window with red
-    	static const GLfloat red[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+    	static const GLfloat red[] = { 1.0f, 0.0f, 0.0f, 1.0f };
 		glClearBufferfv(GL_COLOR, 0, red);
 
         glUseProgram(render_prog);
@@ -93,17 +184,68 @@ class agao_app : public sb6::application
 							(float)cos(currentTime) * 0.6f,
 							0.0f, 0.0f };
 		// Update the value of input attribute 0
-		glVertexAttrib4fv(0, attrib);
+		//glVertexAttrib4fv(0, attrib);
 		glVertexAttrib4fv(1, attrib);
 		glPointSize(40.0f);
-		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+
+		float f = (float)currentTime * (float)M_PI * 0.1f;
+		vmath::mat4 mv_matrix =
+			vmath::translate(0.0f, 0.0f, -4.0f) *
+			vmath::translate(sinf(2.1f * f) * 0.5f,
+			cosf(1.7f * f) * 0.5f,
+			sinf(1.3f * f) * cosf(1.5f * f) * 2.0f) *
+			vmath::rotate((float)currentTime * 45.0f, 0.0f, 1.0f, 0.0f) *
+			vmath::rotate((float)currentTime * 81.0f, 1.0f, 0.0f, 0.0f);
+
+		GLint mv_location = glGetUniformLocation(render_prog, "mv_matrix");
+		GLint proj_location = glGetUniformLocation(render_prog, "proj_matrix");
+		GLint ws_location = glGetUniformLocation(render_prog, "wsize");
+		vmath::ivec2 wsize = vmath::ivec2(info.windowWidth, info.windowHeight);
+
+		// Set the model-view and projection matrices
+		glUniformMatrix4fv(mv_location, 1, GL_FALSE, mv_matrix);
+		glUniformMatrix4fv(proj_location, 1, GL_FALSE, proj_matrix);
+		glUniform2iv(ws_location, 1, wsize);
+
+		glBindTexture(GL_TEXTURE_2D, tex_object[1]);
+
+		glDrawArrays(GL_TRIANGLES, 0, 24);
 	}
+
+	void onResize(int w, int h)
+	{
+		sb6::application::onResize(w, h);
+		aspect = (float)info.windowWidth / (float)info.windowHeight;
+		proj_matrix = vmath::perspective(50.0f,
+										aspect,
+										0.1f,
+										1000.0f);
+	}
+	
+	private:
+		void generate_texture(float * data, int width, int height)
+		{
+			int x, y;
+	
+			for (y = 0; y < height; y++)
+			{
+				for (x = 0; x < width; x++)
+				{
+					data[(y * width + x) * 4 + 0] = (float)((x & y) & 0xFF) / 255.0f;
+					data[(y * width + x) * 4 + 1] = (float)((x | y) & 0xFF) / 255.0f;
+					data[(y * width + x) * 4 + 2] = (float)((x ^ y) & 0xFF) / 255.0f;
+					data[(y * width + x) * 4 + 3] = 1.0f;
+				}
+			}
+		}
 
 	
 	protected:
 		GLuint			render_prog;
 		GLuint			render_vao;
+		GLfloat 		aspect;
+		vmath::mat4 	proj_matrix;
+		GLuint          tex_object[2];
 };
 
 DECLARE_MAIN(agao_app)
