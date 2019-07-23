@@ -148,7 +148,7 @@ class alienrain_app : public sb6::application
         glGenVertexArrays(1, &render_vao);
         glBindVertexArray(render_vao);
 
-        tex_alien_array = sb6::ktx::file::load("media/textures/aliens.ktx");
+        tex_alien_array = sb6::ktx::file::load("../bin/media/textures/aliens.ktx");
 		if (0 == tex_alien_array) {
 	        fprintf(stderr, "Unable to create alien texture.\n");
 		}
