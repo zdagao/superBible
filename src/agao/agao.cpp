@@ -85,6 +85,22 @@ class agao_app : public sb6::application
 		glBindVertexArray(render_vao);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		fprintf(stdout, "size of long %lu %lu \n", sizeof(long), SIZE_MAX);
+		vmath::vec4 v1(1.0, 2.0, 3.0, 4.0);
+		vmath::vec4 v2(2.0, 1.0, 3.0, 4.0);
+		vmath::mat4 m1(vmath::vec4(1.0, 2.0, 3.0, 4.0),
+						vmath::vec4(4.0, 3.0, 2.0, 1.0),
+						vmath::vec4(5.0, 6.0, 7.0, 8.0),
+						vmath::vec4(8.0, 7.0, 6.0, 5.0));
+		vmath::mat4 m2(vmath::vec4(1.0, 0.0, 1.0, 1.0),
+						vmath::vec4(0.0, 1.0, 1.0, 0.0),
+						vmath::vec4(1.0, 1.0, 1.0, 1.0),
+						vmath::vec4(1.0, 0.0, 0.0, 1.0));
+		//vmath::vec4 v3 = v1 / v2;
+		vmath::mat4 m3 = vmath::mat4().identity() * m2;
+		vmath::vec4 v3 = m3[0];
+		fprintf(stdout, "vec4 %f %f %f %f\n", v3[0], v3[1], v3[2], v3[3]);
 	}
 
     void render(double currentTime)

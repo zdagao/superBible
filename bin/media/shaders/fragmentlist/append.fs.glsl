@@ -1,4 +1,4 @@
-#version 430 core
+#version 330 core
 
 // Atomic counter for filled size
 layout (binding = 0, offset = 0) uniform atomic_uint fill_counter;

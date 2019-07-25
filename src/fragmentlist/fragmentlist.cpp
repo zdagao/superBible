@@ -38,6 +38,9 @@ public:
     {
     }
 
+private:
+	void checkShaderCompile(GLuint shader, unsigned int line);
+	
 protected:
     void init();
     void startup();
@@ -95,7 +98,7 @@ void fragmentlist_app::startup()
     glBindBuffer(GL_UNIFORM_BUFFER, uniforms_buffer);
     glBufferData(GL_UNIFORM_BUFFER, sizeof(uniforms_block), NULL, GL_DYNAMIC_DRAW);
 
-    object.load("media/objects/dragon.sbm");
+    object.load("../bin/media/objects/dragon.sbm");
 
     glGenBuffers(1, &fragment_buffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, fragment_buffer);
@@ -184,16 +187,20 @@ void fragmentlist_app::load_shaders()
 {
     GLuint  shaders[2];
 
-    shaders[0] = sb6::shader::load("media/shaders/fragmentlist/clear.vs.glsl", GL_VERTEX_SHADER);
-    shaders[1] = sb6::shader::load("media/shaders/fragmentlist/clear.fs.glsl", GL_FRAGMENT_SHADER);
+    shaders[0] = sb6::shader::load("../bin/media/shaders/fragmentlist/clear.vs.glsl", GL_VERTEX_SHADER);
+	checkShaderCompile(shaders[0], __LINE__);
+    shaders[1] = sb6::shader::load("../bin/media/shaders/fragmentlist/clear.fs.glsl", GL_FRAGMENT_SHADER);
+	checkShaderCompile(shaders[1], __LINE__);
 
     if (clear_program)
         glDeleteProgram(clear_program);
 
     clear_program = sb6::program::link_from_shaders(shaders, 2, true);
 
-    shaders[0] = sb6::shader::load("media/shaders/fragmentlist/append.vs.glsl", GL_VERTEX_SHADER);
-    shaders[1] = sb6::shader::load("media/shaders/fragmentlist/append.fs.glsl", GL_FRAGMENT_SHADER);
+    shaders[0] = sb6::shader::load("../bin/media/shaders/fragmentlist/append.vs.glsl", GL_VERTEX_SHADER);
+	checkShaderCompile(shaders[0], __LINE__);
+	shaders[1] = sb6::shader::load("../bin/media/shaders/fragmentlist/append.fs.glsl", GL_FRAGMENT_SHADER);
+	checkShaderCompile(shaders[1], __LINE__);
 
     if (append_program)
         glDeleteProgram(append_program);
@@ -202,13 +209,25 @@ void fragmentlist_app::load_shaders()
 
     uniforms.mvp = glGetUniformLocation(append_program, "mvp");
 
-    shaders[0] = sb6::shader::load("media/shaders/fragmentlist/resolve.vs.glsl", GL_VERTEX_SHADER);
-    shaders[1] = sb6::shader::load("media/shaders/fragmentlist/resolve.fs.glsl", GL_FRAGMENT_SHADER);
+    shaders[0] = sb6::shader::load("../bin/media/shaders/fragmentlist/resolve.vs.glsl", GL_VERTEX_SHADER);
+	checkShaderCompile(shaders[0], __LINE__);
+    shaders[1] = sb6::shader::load("../bin/media/shaders/fragmentlist/resolve.fs.glsl", GL_FRAGMENT_SHADER);
+	checkShaderCompile(shaders[1], __LINE__);
 
     if (resolve_program)
         glDeleteProgram(resolve_program);
 
     resolve_program = sb6::program::link_from_shaders(shaders, 2, true);
 }
+
+void fragmentlist_app::checkShaderCompile(GLuint shader, unsigned int line)
+{
+	char buffer[1024];
+	memset(buffer, 0, sizeof(buffer));
+	glGetShaderInfoLog(shader, 1024, NULL, buffer);
+	if (strlen(buffer) != 0)
+		fprintf(stderr, "error happened in compiling shader(%d) in line %u: %s\n", shader, line, buffer);
+}
+
 
 DECLARE_MAIN(fragmentlist_app)
