@@ -30,7 +30,7 @@ static const char * grass_vs_source[] =
     "// Vertex Shader                                                                                            \n"
     "// Graham Sellers                                                                                           \n"
     "// OpenGL SuperBible                                                                                        \n"
-    "#version 420 core                                                                                           \n"
+    "#version 330 core                                                                                           \n"
     "                                                                                                            \n"
     "// Incoming per vertex position                                                                             \n"
     "in vec4 vVertex;                                                                                            \n"
@@ -40,11 +40,11 @@ static const char * grass_vs_source[] =
     "                                                                                                            \n"
     "uniform mat4 mvpMatrix;                                                                                     \n"
     "                                                                                                            \n"
-    "layout (binding = 0) uniform sampler1D grasspalette_texture;                                                \n"
-    "layout (binding = 1) uniform sampler2D length_texture;                                                      \n"
-    "layout (binding = 2) uniform sampler2D orientation_texture;                                                 \n"
-    "layout (binding = 3) uniform sampler2D grasscolor_texture;                                                  \n"
-    "layout (binding = 4) uniform sampler2D bend_texture;                                                        \n"
+    "uniform sampler1D grasspalette_texture;                                                \n"
+    "uniform sampler2D length_texture;                                                      \n"
+    "uniform sampler2D orientation_texture;                                                 \n"
+    "uniform sampler2D grasscolor_texture;                                                  \n"
+    "uniform sampler2D bend_texture;                                                        \n"
     "                                                                                                            \n"
     "int random(int seed, int iterations)                                                                        \n"
     "{                                                                                                           \n"
@@ -121,7 +121,7 @@ static const char * grass_fs_source[] =
     "// Fragment Shader               \n"
     "// Graham Sellers                \n"
     "// OpenGL SuperBible             \n"
-    "#version 420 core                \n"
+    "#version 330 core                \n"
     "                                 \n"
     "in vec4 color;                   \n"
     "                                 \n"
@@ -175,7 +175,9 @@ public:
         glShaderSource(grass_fs, 1, grass_fs_source, NULL);
 
         glCompileShader(grass_vs);
+		checkShaderCompile(grass_vs, "grass_vs");
         glCompileShader(grass_fs);
+		checkShaderCompile(grass_fs, "grass_fs");
 
         glAttachShader(grass_program, grass_vs);
         glAttachShader(grass_program, grass_fs);
@@ -186,14 +188,28 @@ public:
 
         uniforms.mvpMatrix = glGetUniformLocation(grass_program, "mvpMatrix");
 
+		GLuint sampler_location;
+
         glActiveTexture(GL_TEXTURE1);
-        tex_grass_length = sb6::ktx::file::load("media/textures/grass_length.ktx");
+        tex_grass_length = sb6::ktx::file::load("../bin/media/textures/grass_length.ktx");
+		sampler_location = glGetUniformLocation(grass_program, "length_texture");
+		fprintf(stdout, "tex_grass_length %d\n", tex_grass_length);
+		glUniform1i(sampler_location, 1);
+
+		checkGLErr(__LINE__);
+		
         glActiveTexture(GL_TEXTURE2);
-        tex_grass_orientation = sb6::ktx::file::load("media/textures/grass_orientation.ktx");
+        tex_grass_orientation = sb6::ktx::file::load("../bin/media/textures/grass_orientation.ktx");
+		sampler_location = glGetUniformLocation(grass_program, "orientation_texture");
+		fprintf(stdout, "tex_grass_orientation %d\n", tex_grass_orientation);
+		
         glActiveTexture(GL_TEXTURE3);
-        tex_grass_color = sb6::ktx::file::load("media/textures/grass_color.ktx");
+        tex_grass_color = sb6::ktx::file::load("../bin/media/textures/grass_color.ktx");
+		sampler_location = glGetUniformLocation(grass_program, "grasscolor_texture");
+		
         glActiveTexture(GL_TEXTURE4);
-        tex_grass_bend = sb6::ktx::file::load("media/textures/grass_bend.ktx");
+        tex_grass_bend = sb6::ktx::file::load("../bin/media/textures/grass_bend.ktx");
+		sampler_location = glGetUniformLocation(grass_program, "bend_texture");
     }
 
     void shutdown(void)
@@ -227,6 +243,22 @@ public:
         glBindVertexArray(grass_vao);
         glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 6, 1024 * 1024);
     }
+
+private:
+	void checkShaderCompile(GLuint shader, const GLchar * desc)
+	{
+		char buffer[1024];
+		memset(buffer, 0, sizeof(buffer));
+		glGetShaderInfoLog(shader, 1024, NULL, buffer);
+		if (strlen(buffer) != 0)
+			fprintf(stderr, "error happened in %s shader(%d): %s\n", desc, shader, buffer);
+	}
+
+	void checkGLErr(GLint line)
+	{
+		for(GLenum err; (err = glGetError()) != GL_NO_ERROR;)
+			fprintf(stdout, "line %d: Error found 0x%04x\n", line, err);
+	}
 
 private:
     GLuint      grass_buffer;

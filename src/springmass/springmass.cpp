@@ -51,7 +51,7 @@ public:
           m_render_program(0),
           draw_points(true),
           draw_lines(true),
-          iterations_per_frame(16)
+          iterations_per_frame(2)
     {
     }
 
@@ -229,9 +229,9 @@ private:
                     break;
                 case 'P': draw_points = !draw_points;
                     break;
-                case GLFW_KEY_KP_ADD: iterations_per_frame++;
+                case '=': iterations_per_frame++;
                     break;
-                case GLFW_KEY_KP_SUBTRACT: iterations_per_frame--;
+                case '-': iterations_per_frame--;
                     break;
             }
         }
@@ -243,7 +243,7 @@ private:
         GLuint fs;
         char buffer[1024];
 
-        vs = sb6::shader::load("media/shaders/springmass/update.vs.glsl", GL_VERTEX_SHADER);
+        vs = sb6::shader::load("../bin/media/shaders/springmass/update.vs.glsl", GL_VERTEX_SHADER);
 
         if (m_update_program)
             glDeleteProgram(m_update_program);
@@ -265,8 +265,8 @@ private:
 
         glDeleteShader(vs);
 
-        vs = sb6::shader::load("media/shaders/springmass/render.vs.glsl", GL_VERTEX_SHADER);
-        fs = sb6::shader::load("media/shaders/springmass/render.fs.glsl", GL_FRAGMENT_SHADER);
+        vs = sb6::shader::load("../bin/media/shaders/springmass/render.vs.glsl", GL_VERTEX_SHADER);
+        fs = sb6::shader::load("../bin/media/shaders/springmass/render.fs.glsl", GL_FRAGMENT_SHADER);
 
         if (m_render_program)
             glDeleteProgram(m_render_program);

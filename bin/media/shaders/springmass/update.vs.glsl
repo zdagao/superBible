@@ -1,4 +1,4 @@
-#version 410 core
+#version 330 core
 
 // This input vector contains the vertex position in xyz, and the
 // mass of the vertex in w
@@ -17,7 +17,7 @@ out vec4 tf_position_mass;
 out vec3 tf_velocity;
 
 // A uniform to hold the timestep. The application can update this.
-uniform float t = 0.07;
+uniform float t = 0.0003;
 
 // The global spring constant
 uniform float k = 7.1;

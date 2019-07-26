@@ -1,4 +1,4 @@
-#version 440 core
+#version 330 core
 
 #extension GL_ARB_shader_draw_parameters : require
 
