@@ -191,6 +191,7 @@ public:
 		GLuint sampler_location;
 
         glActiveTexture(GL_TEXTURE1);
+		glTransformFeedbackVaryings
         tex_grass_length = sb6::ktx::file::load("../bin/media/textures/grass_length.ktx");
 		sampler_location = glGetUniformLocation(grass_program, "length_texture");
 		fprintf(stdout, "tex_grass_length %d\n", tex_grass_length);

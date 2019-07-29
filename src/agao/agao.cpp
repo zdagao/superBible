@@ -5,6 +5,7 @@
 #include <cmath>
 #include <shader.h>
 
+
 static unsigned int seed = 0x13733713;
 
 static inline float random_float()
@@ -101,15 +102,102 @@ class agao_app : public sb6::application
 		vmath::mat4 m3 = vmath::mat4().identity() * m2;
 		vmath::vec4 v3 = m3[0];
 		fprintf(stdout, "vec4 %f %f %f %f\n", v3[0], v3[1], v3[2], v3[3]);
+
+		/*
+		glEnable(GL_SCISSOR_TEST);
+		
+		int scissor_width = (7 * info.windowWidth) / 16;
+		int scissor_height = (7 * info.windowHeight) / 16;
+
+		glScissorIndexed(0, 0, 0, scissor_width, scissor_height);
+
+		glScissorIndexed(0,
+						info.windowWidth - scissor_width, 0,
+						info.windowWidth - scissor_width, scissor_height);
+
+		glScissorIndexed(0,
+						0, info.windowHeight - scissor_height,
+						scissor_width, scissor_height);
+
+		glScissorIndexed(0,
+						info.windowWidth - scissor_width,
+						info.windowHeight - scissor_height,
+						scissor_width, scissor_height);
+		*/
+
+		
+        static const char * stvs_source[] =
+        {
+            "#version 330 core                                                 \n"
+            "                                                                  \n"
+            "void main(void)                                                   \n"
+            "{                                                                 \n"
+            "    const vec4 vertices[] = vec4[](vec4( 0.25, -0.25, 0.5, 1.0),  \n"
+            "                                   vec4(-0.25, -0.25, 0.5, 1.0),  \n"
+            "                                   vec4( 0.25,  0.25, 0.5, 1.0)); \n"
+            "                                                                  \n"
+            "    gl_Position = vertices[gl_VertexID];                          \n"
+            "}                                                                 \n"
+        };
+
+        static const char * stfs_source[] =
+        {
+            "#version 330 core                                                 \n"
+            "                                                                  \n"
+            "out vec4 color;                                                   \n"
+            "                                                                  \n"
+            "void main(void)                                                   \n"
+            "{                                                                 \n"
+            "    color = vec4(0.0f, 0.0f, 0.0f, 0.0f);                         \n"
+            "}                                                                 \n"
+        };
+
+        stprogram = glCreateProgram();
+        fs = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(fs, 1, stfs_source, NULL);
+        glCompileShader(fs);
+
+        vs = glCreateShader(GL_VERTEX_SHADER);
+        glShaderSource(vs, 1, stvs_source, NULL);
+        glCompileShader(vs);
+
+        glAttachShader(stprogram, vs);
+        glAttachShader(stprogram, fs);
+
+        glLinkProgram(stprogram);
+
+		glDeleteShader(vs);
+		glDeleteShader(fs);
+
 	}
 
     void render(double currentTime)
     {
-		static const GLfloat black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+        static const GLfloat black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 		float t = (float)currentTime;
 		glViewport(0, 0, info.windowWidth, info.windowHeight);
 		glClearBufferfv(GL_COLOR, 0, black);
-		
+
+		glEnable(GL_DEPTH_TEST);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+		//glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_KEEP, GL_REPLACE);
+
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+
+		//glStencilFuncSeparate(GL_FRONT, GL_ALWAYS, 1, 0xff);
+		glStencilFunc(GL_ALWAYS, 1, 0xFF);
+		glStencilMask(0xFF);
+		glUseProgram(stprogram);		
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+
+		glEnable(GL_STENCIL_TEST);
+
+		//glStencilFuncSeparate(GL_FRONT_AND_BACK, GL_NOTEQUAL, 1, 0xff);
+		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+		glStencilMask(0x00);
+		glDisable(GL_DEPTH_TEST);
+
 		glUseProgram(render_prog);
 		glBindBufferBase(GL_UNIFORM_BUFFER, 0, rain_buffer);
 		
@@ -137,9 +225,12 @@ class agao_app : public sb6::application
 			glVertexAttribI1i(0, alien_index);
 			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 		}
+		//glStencilMask(0xFF);
+		//glEnable(GL_DEPTH_TEST);
 	}
 
 	protected:
+		GLuint			stprogram;
 		GLuint			render_prog;
 		GLuint			render_vao;
 		
