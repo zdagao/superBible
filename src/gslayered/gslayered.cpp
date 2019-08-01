@@ -69,7 +69,7 @@ public:
 
         load_shaders();
 
-        obj.load("media/objects/torus.sbm");
+        obj.load("../bin/media/objects/torus.sbm");
 
         glGenBuffers(1, &transform_ubo);
         glBindBuffer(GL_UNIFORM_BUFFER, transform_ubo);
@@ -114,7 +114,9 @@ public:
             vmath::mat4 mv_matrix[16];
         };
 
-        glBindBufferBase(GL_UNIFORM_BUFFER, 0, transform_ubo);
+		GLuint block_idx = glGetUniformBlockIndex(program_gslayers, "BLOCK");
+
+        glBindBufferBase(GL_UNIFORM_BUFFER, block_idx, transform_ubo);
 
         TRANSFORM_BUFFER * buffer = (TRANSFORM_BUFFER *)glMapBufferRange(GL_UNIFORM_BUFFER, 0, sizeof(TRANSFORM_BUFFER), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
 
@@ -192,8 +194,10 @@ public:
 
         program_showlayers = glCreateProgram();
 
-        vs = sb6::shader::load("media/shaders/gslayers/showlayers.vs.glsl", GL_VERTEX_SHADER);
-        fs = sb6::shader::load("media/shaders/gslayers/showlayers.fs.glsl", GL_FRAGMENT_SHADER);
+        vs = sb6::shader::load("../bin/media/shaders/gslayers/showlayers.vs.glsl", GL_VERTEX_SHADER);
+		checkShaderCompile(vs, "program_showlayers vs");
+        fs = sb6::shader::load("../bin/media/shaders/gslayers/showlayers.fs.glsl", GL_FRAGMENT_SHADER);
+		checkShaderCompile(fs, "program_showlayers fs");
 
         glAttachShader(program_showlayers, vs);
         glAttachShader(program_showlayers, fs);
@@ -203,9 +207,12 @@ public:
         glDeleteShader(vs);
         glDeleteShader(fs);
 
-        vs = sb6::shader::load("media/shaders/gslayers/gslayers.vs.glsl", GL_VERTEX_SHADER);
-        gs = sb6::shader::load("media/shaders/gslayers/gslayers.gs.glsl", GL_GEOMETRY_SHADER);
-        fs = sb6::shader::load("media/shaders/gslayers/gslayers.fs.glsl", GL_FRAGMENT_SHADER);
+        vs = sb6::shader::load("../bin/media/shaders/gslayers/gslayers.vs.glsl", GL_VERTEX_SHADER);
+		checkShaderCompile(vs, "program_gslayers vs");
+        gs = sb6::shader::load("../bin/media/shaders/gslayers/gslayers.gs.glsl", GL_GEOMETRY_SHADER);
+		checkShaderCompile(gs, "program_gslayers gs");
+        fs = sb6::shader::load("../bin/media/shaders/gslayers/gslayers.fs.glsl", GL_FRAGMENT_SHADER);
+		checkShaderCompile(fs, "program_gslayers fs");
 
         if (program_gslayers)
             glDeleteProgram(program_gslayers);
@@ -235,6 +242,17 @@ private:
     GLuint      array_depth;
 
     sb6::object obj;
+
+	
+	void checkShaderCompile(GLuint shader, const GLchar * desc)
+	{
+		char buffer[1024];
+		memset(buffer, 0, sizeof(buffer));
+		glGetShaderInfoLog(shader, 1024, NULL, buffer);
+		
+		if (strlen(buffer) != 0)
+			fprintf(stderr, "error happened in %s shader(%d): %s\n", desc, shader, buffer);
+	}
 };
 
 DECLARE_MAIN(gslayered_app);

@@ -1,4 +1,5 @@
-#version 430 core
+#version 330 core
+#extension GL_ARB_gpu_shader5 : require
 
 layout (invocations = 16, triangles) in;
 layout (triangle_strip, max_vertices = 3) out;
@@ -15,7 +16,7 @@ out GS_OUT
     vec3 normal;
 } gs_out;
 
-layout (binding = 0) uniform BLOCK
+uniform BLOCK
 {
     mat4 proj_matrix;
     mat4 mv_matrix[16];

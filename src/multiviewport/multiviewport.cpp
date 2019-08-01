@@ -42,7 +42,7 @@ class multiviewport_app : public sb6::application
     {
         static const char * vs_source[] =
         {
-            "#version 420 core                                                  \n"
+            "#version 330 core                                                  \n"
             "                                                                   \n"
             "in vec4 position;                                                  \n"
             "                                                                   \n"
@@ -60,12 +60,13 @@ class multiviewport_app : public sb6::application
 
         static const char * gs_source[] =
         {
-            "#version 420 core                                                  \n"
-            "                                                                   \n"
-            "layout (triangles, invocations = 4) in;                            \n"
+            "#version 330 core                                                  \n"
+            "#extension GL_ARB_gpu_shader5 : require                            \n"
+			"																	\n"
+            "layout (triangles, invocations = 3) in;                            \n"
             "layout (triangle_strip, max_vertices = 3) out;                     \n"
             "                                                                   \n"
-            "layout (std140, binding = 0) uniform transform_block               \n"
+            "layout (std140) uniform transform_block               				\n"
             "{                                                                  \n"
             "    mat4 mvp_matrix[4];                                            \n"
             "};                                                                 \n"
@@ -86,8 +87,8 @@ class multiviewport_app : public sb6::application
             "    {                                                              \n"
             "        gs_out.color = gs_in[i].color;                             \n"
             "        gl_Position = mvp_matrix[gl_InvocationID] *                \n"
-            "                      gl_in[i].gl_Position;                        \n"
-            "        gl_ViewportIndex = gl_InvocationID;                        \n"
+            "                      gl_in[i].gl_Position + vec4(gl_InvocationID - 1, 0, 0, 1);                        \n"
+            //"        gl_ViewportIndex = gl_InvocationID;                        \n"
             "        EmitVertex();                                              \n"
             "    }                                                              \n"
             "    EndPrimitive();                                                \n"
@@ -96,7 +97,7 @@ class multiviewport_app : public sb6::application
 
         static const char * fs_source[] =
         {
-            "#version 420 core                                                  \n"
+            "#version 330 core                                                  \n"
             "                                                                   \n"
             "out vec4 color;                                                    \n"
             "                                                                   \n"
@@ -115,14 +116,17 @@ class multiviewport_app : public sb6::application
         GLuint vs = glCreateShader(GL_VERTEX_SHADER);
         glShaderSource(vs, 1, vs_source, NULL);
         glCompileShader(vs);
+		checkShaderCompile(vs, "vs");
 
         GLuint gs = glCreateShader(GL_GEOMETRY_SHADER);
         glShaderSource(gs, 1, gs_source, NULL);
         glCompileShader(gs);
+		checkShaderCompile(gs, "gs");
 
         GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
         glShaderSource(fs, 1, fs_source, NULL);
         glCompileShader(fs);
+		checkShaderCompile(fs, "fs");
 
         glAttachShader(program, vs);
         glAttachShader(program, gs);
@@ -198,6 +202,7 @@ class multiviewport_app : public sb6::application
         glClearBufferfv(GL_COLOR, 0, black);
         glClearBufferfv(GL_DEPTH, 0, &one);
 
+/*
         // Each rectangle will be 7/16 of the screen
         float viewport_width = (float)(7 * info.windowWidth) / 16.0f;
         float viewport_height = (float)(7 * info.windowHeight) / 16.0f;
@@ -220,6 +225,7 @@ class multiviewport_app : public sb6::application
                            info.windowWidth - viewport_width,
                            info.windowHeight - viewport_height,
                            viewport_width, viewport_height);
+*/
 
         vmath::mat4 proj_matrix = vmath::perspective(50.0f,
                                                      (float)info.windowWidth / (float)info.windowHeight,
@@ -228,7 +234,8 @@ class multiviewport_app : public sb6::application
 
         float f = (float)currentTime * 0.3f;
 
-        glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniform_buffer);
+		GLuint transform_block_idx = glGetUniformBlockIndex(program, "transform_block");
+        glBindBufferBase(GL_UNIFORM_BUFFER, transform_block_idx, uniform_buffer);
         vmath::mat4 * mv_matrix_array = (vmath::mat4 *)glMapBufferRange(GL_UNIFORM_BUFFER,
                                                                         0,
                                                                         4 * sizeof(vmath::mat4),
@@ -255,6 +262,17 @@ class multiviewport_app : public sb6::application
         glDeleteProgram(program);
         glDeleteBuffers(1, &position_buffer);
     }
+
+private:
+	void checkShaderCompile(GLuint shader, const GLchar * desc)
+	{
+		char buffer[1024];
+		memset(buffer, 0, sizeof(buffer));
+		glGetShaderInfoLog(shader, 1024, NULL, buffer);
+		
+		if (strlen(buffer) != 0)
+			fprintf(stderr, "error happened in %s shader(%d):\n%s\n", desc, shader, buffer);
+	}
 
 private:
     GLuint          program;

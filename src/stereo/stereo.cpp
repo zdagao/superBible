@@ -30,6 +30,8 @@
 
 #define DEPTH_TEXTURE_SIZE      4096
 #define FRUSTUM_DEPTH           1000
+#define CheckGLErr() {checkGLErr(__LINE__);}
+
 
 class stereo_app : public sb6::application
 {
@@ -42,6 +44,23 @@ public:
           separation(2.0f)
     {
     }
+
+private:
+	void checkShaderCompile(GLuint shader, const GLchar * desc)
+	{
+		char buffer[1024];
+		memset(buffer, 0, sizeof(buffer));
+		glGetShaderInfoLog(shader, 1024, NULL, buffer);
+		
+		if (strlen(buffer) != 0)
+			fprintf(stderr, "error happened in %s shader(%d): %s\n", desc, shader, buffer);
+	}
+	
+	void checkGLErr(GLint line)
+	{
+		for(GLenum err; (err = glGetError()) != GL_NO_ERROR;)
+			fprintf(stdout, "line %d: Error found 0x%04x\n", line, err);
+	}
 
 protected:
     void init();
@@ -103,10 +122,10 @@ void stereo_app::init()
 {
     sb6::application::init();
 
-    info.flags.fullscreen = 1;
-    info.flags.stereo = 1;
-    info.windowWidth = 0;
-    info.windowHeight = 0;
+    //info.flags.fullscreen = 1;
+    //info.flags.stereo = 1;
+    //info.windowWidth = 0;
+    //info.windowHeight = 0;
 
     static const char title[] = "OpenGL SuperBible - Texture Coordinates";
 
@@ -116,15 +135,16 @@ void stereo_app::init()
 void stereo_app::startup()
 {
     load_shaders();
+	CheckGLErr();
 
     int i;
 
     static const char * const object_names[] =
     {
-        "media/objects/dragon.sbm",
-        "media/objects/sphere.sbm",
-        "media/objects/cube.sbm",
-        "media/objects/torus.sbm"
+        "../bin/media/objects/dragon.sbm",
+        "../bin/media/objects/sphere.sbm",
+        "../bin/media/objects/cube.sbm",
+        "../bin/media/objects/torus.sbm"
     };
 
     for (i = 0; i < OBJECT_COUNT; i++)
@@ -134,8 +154,12 @@ void stereo_app::startup()
 
     glEnable(GL_DEPTH_TEST);
 
+	CheckGLErr();
     glGenVertexArrays(1, &quad_vao);
     glBindVertexArray(quad_vao);
+
+	
+	CheckGLErr();
 }
 
 void stereo_app::render(double currentTime)
@@ -191,7 +215,9 @@ void stereo_app::render(double currentTime)
 
     glEnable(GL_DEPTH_TEST);
 
+	CheckGLErr();
     render_scene(total_time);
+	CheckGLErr();
 }
 
 void stereo_app::render_scene(double currentTime)
@@ -226,9 +252,12 @@ void stereo_app::render_scene(double currentTime)
     for (j = 0; j < 2; j++)
     {
         static const GLenum buffs[] = { GL_BACK_LEFT, GL_BACK_RIGHT };
+		CheckGLErr();
         glDrawBuffer(buffs[j]);
+		CheckGLErr();
         glClearBufferfv(GL_COLOR, 0, gray);
         glClearBufferfv(GL_DEPTH, 0, ones);
+		CheckGLErr();
         for (i = 0; i < 4; i++)
         {
             vmath::mat4& model_matrix = objects[i].model_matrix;
@@ -238,6 +267,7 @@ void stereo_app::render_scene(double currentTime)
             glUniform1i(uniforms.view.full_shading, mode == RENDER_FULL ? 1 : 0);
             glUniform3fv(uniforms.view.diffuse_albedo, 1, diffuse_colors[i]);
             objects[i].obj.render();
+			CheckGLErr();
         }
     }
 }
@@ -278,8 +308,10 @@ void stereo_app::load_shaders()
     GLuint vs;
     GLuint fs;
 
-    vs = sb6::shader::load("media/shaders/stereo/stereo-render.vs.glsl", GL_VERTEX_SHADER);
-    fs = sb6::shader::load("media/shaders/stereo/stereo-render.fs.glsl", GL_FRAGMENT_SHADER);
+    vs = sb6::shader::load("../bin/media/shaders/stereo/stereo-render.vs.glsl", GL_VERTEX_SHADER);
+	checkShaderCompile(vs, "stereo-render.vs");
+    fs = sb6::shader::load("../bin/media/shaders/stereo/stereo-render.fs.glsl", GL_FRAGMENT_SHADER);
+	checkShaderCompile(vs, "stereo-render.fs");
 
     if (view_program)
         glDeleteProgram(view_program);

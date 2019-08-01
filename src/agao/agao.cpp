@@ -7,6 +7,8 @@
 
 
 static unsigned int seed = 0x13733713;
+static const GLfloat one = 1.0;
+#define CheckGLErr() {checkGLErr(__LINE__);}
 
 static inline float random_float()
 {
@@ -31,32 +33,43 @@ class agao_app : public sb6::application
         sb6::application::init();
 
         memcpy(info.title, title, sizeof(title));
+		//info.flags.stereo = 1;
+		//info.flags.fullscreen = 1;
     }
 
     void startup()
     {
-	    GLuint  vs, fs;
+	    GLuint  vs, fs, gs;
 		
 		vs = sb6::shader::load("../bin/media/shaders/agao/agao.vs.glsl", GL_VERTEX_SHADER);
-
-        char buffer[1024];
-		memset(buffer, 0, sizeof(buffer));
-        glGetShaderInfoLog(vs, 1024, NULL, buffer);
-		if (strlen(buffer) != 0)
-			fprintf(stderr, "vs log: %s\n", buffer);
+		checkShaderCompile(fs, "render_prog vs");
 
 		fs = sb6::shader::load("../bin/media/shaders/agao/agao.fs.glsl", GL_FRAGMENT_SHADER);
+		checkShaderCompile(fs, "render_prog fs");
 
-		memset(buffer, 0, sizeof(buffer));
-        glGetShaderInfoLog(fs, 1024, NULL, buffer);
-		if (strlen(buffer) != 0)
-			fprintf(stderr, "fs log: %s\n", buffer);
+		gs = sb6::shader::load("../bin/media/shaders/agao/agao.gs.glsl", GL_GEOMETRY_SHADER);
+		checkShaderCompile(fs, "render_prog gs");
 
-		
 		render_prog = glCreateProgram();
         glAttachShader(render_prog, vs);
+		glAttachShader(render_prog, gs);
         glAttachShader(render_prog, fs);
 		glLinkProgram(render_prog);
+
+		glDeleteShader(vs);
+		glDeleteShader(gs);
+		glDeleteShader(fs);
+
+		vs = sb6::shader::load("../bin/media/shaders/agao/strender.vs.glsl", GL_VERTEX_SHADER);
+		checkShaderCompile(vs, "strender vs");
+
+		fs = sb6::shader::load("../bin/media/shaders/agao/strender.fs.glsl", GL_FRAGMENT_SHADER);
+		checkShaderCompile(fs, "strender fs");
+
+		strender = glCreateProgram();
+        glAttachShader(strender, vs);
+        glAttachShader(strender, fs);
+		glLinkProgram(strender);
 
 		glDeleteShader(vs);
 		glDeleteShader(fs);
@@ -87,150 +100,118 @@ class agao_app : public sb6::application
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-		fprintf(stdout, "size of long %lu %lu \n", sizeof(long), SIZE_MAX);
-		vmath::vec4 v1(1.0, 2.0, 3.0, 4.0);
-		vmath::vec4 v2(2.0, 1.0, 3.0, 4.0);
-		vmath::mat4 m1(vmath::vec4(1.0, 2.0, 3.0, 4.0),
-						vmath::vec4(4.0, 3.0, 2.0, 1.0),
-						vmath::vec4(5.0, 6.0, 7.0, 8.0),
-						vmath::vec4(8.0, 7.0, 6.0, 5.0));
-		vmath::mat4 m2(vmath::vec4(1.0, 0.0, 1.0, 1.0),
-						vmath::vec4(0.0, 1.0, 1.0, 0.0),
-						vmath::vec4(1.0, 1.0, 1.0, 1.0),
-						vmath::vec4(1.0, 0.0, 0.0, 1.0));
-		//vmath::vec4 v3 = v1 / v2;
-		vmath::mat4 m3 = vmath::mat4().identity() * m2;
-		vmath::vec4 v3 = m3[0];
-		fprintf(stdout, "vec4 %f %f %f %f\n", v3[0], v3[1], v3[2], v3[3]);
+		glGenTextures(1, &color_texture);
+		glBindTexture(GL_TEXTURE_2D_ARRAY, color_texture);
+		glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGBA8, 512, 512, 2);
 
-		/*
-		glEnable(GL_SCISSOR_TEST);
-		
-		int scissor_width = (7 * info.windowWidth) / 16;
-		int scissor_height = (7 * info.windowHeight) / 16;
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-		glScissorIndexed(0, 0, 0, scissor_width, scissor_height);
+		GLuint depth_texture;
+		glGenTextures(1, &depth_texture);
+		glBindTexture(GL_TEXTURE_2D_ARRAY, depth_texture);
+		glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_DEPTH_COMPONENT32F, 512, 512, 2);
 
-		glScissorIndexed(0,
-						info.windowWidth - scissor_width, 0,
-						info.windowWidth - scissor_width, scissor_height);
+		glGenFramebuffers(1, &fbo);
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
-		glScissorIndexed(0,
-						0, info.windowHeight - scissor_height,
-						scissor_width, scissor_height);
+		glFramebufferTexture(GL_FRAMEBUFFER,
+							GL_COLOR_ATTACHMENT0,
+							color_texture, 0);
+		glFramebufferTexture(GL_FRAMEBUFFER,
+							GL_DEPTH_ATTACHMENT,
+							depth_texture, 0);
 
-		glScissorIndexed(0,
-						info.windowWidth - scissor_width,
-						info.windowHeight - scissor_height,
-						scissor_width, scissor_height);
-		*/
-
-		
-        static const char * stvs_source[] =
-        {
-            "#version 330 core                                                 \n"
-            "                                                                  \n"
-            "void main(void)                                                   \n"
-            "{                                                                 \n"
-            "    const vec4 vertices[] = vec4[](vec4( 0.25, -0.25, 0.5, 1.0),  \n"
-            "                                   vec4(-0.25, -0.25, 0.5, 1.0),  \n"
-            "                                   vec4( 0.25,  0.25, 0.5, 1.0)); \n"
-            "                                                                  \n"
-            "    gl_Position = vertices[gl_VertexID];                          \n"
-            "}                                                                 \n"
-        };
-
-        static const char * stfs_source[] =
-        {
-            "#version 330 core                                                 \n"
-            "                                                                  \n"
-            "out vec4 color;                                                   \n"
-            "                                                                  \n"
-            "void main(void)                                                   \n"
-            "{                                                                 \n"
-            "    color = vec4(0.0f, 0.0f, 0.0f, 0.0f);                         \n"
-            "}                                                                 \n"
-        };
-
-        stprogram = glCreateProgram();
-        fs = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fs, 1, stfs_source, NULL);
-        glCompileShader(fs);
-
-        vs = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vs, 1, stvs_source, NULL);
-        glCompileShader(vs);
-
-        glAttachShader(stprogram, vs);
-        glAttachShader(stprogram, fs);
-
-        glLinkProgram(stprogram);
-
-		glDeleteShader(vs);
-		glDeleteShader(fs);
-
+		static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0 };
+		glDrawBuffers(1, draw_buffers);
 	}
 
     void render(double currentTime)
     {
-        static const GLfloat black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+        static const GLfloat green[] = { 0.0f, 1.0f, 0.0f, 0.0f };
+		glViewport(0, 0, 512, 512);
+		glClearBufferfv(GL_COLOR, 0, green);
+		glClearBufferfv(GL_DEPTH, 0, &one);
 		float t = (float)currentTime;
-		glViewport(0, 0, info.windowWidth, info.windowHeight);
-		glClearBufferfv(GL_COLOR, 0, black);
-
-		glEnable(GL_DEPTH_TEST);
-		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-		//glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_KEEP, GL_REPLACE);
-
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-
-		//glStencilFuncSeparate(GL_FRONT, GL_ALWAYS, 1, 0xff);
-		glStencilFunc(GL_ALWAYS, 1, 0xFF);
-		glStencilMask(0xFF);
-		glUseProgram(stprogram);		
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-
-		glEnable(GL_STENCIL_TEST);
-
-		//glStencilFuncSeparate(GL_FRONT_AND_BACK, GL_NOTEQUAL, 1, 0xff);
-		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-		glStencilMask(0x00);
-		glDisable(GL_DEPTH_TEST);
 
 		glUseProgram(render_prog);
-		glBindBufferBase(GL_UNIFORM_BUFFER, 0, rain_buffer);
-		
-		vmath::vec4 * droplet =
-					(vmath::vec4 *)glMapBufferRange(
-												GL_UNIFORM_BUFFER,
-												0,
-												256 * sizeof(vmath::vec4),
-												GL_MAP_WRITE_BIT |
-												GL_MAP_INVALIDATE_BUFFER_BIT);
-		
-		for (int i = 0; i < 256; i++)
-		{
-			droplet[i][0] = droplet_x_offset[i];
-			droplet[i][1] = 2.0f - fmodf((t + float(i)) *
-										droplet_fall_speed[i], 4.31f);
-			droplet[i][2] = t * droplet_rot_speed[i];
-			droplet[i][3] = 0.0f;
-		}		
-		glUnmapBuffer(GL_UNIFORM_BUFFER);
-		
-		int alien_index;
-		for (alien_index = 0; alien_index < 256; alien_index++)
-		{
-			glVertexAttribI1i(0, alien_index);
-			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-		}
-		//glStencilMask(0xFF);
-		//glEnable(GL_DEPTH_TEST);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+
+		static const vmath::vec3 origin(0.0f);
+		static const vmath::vec3 up_vector(0.0f, 1.0f, 0.0f);
+		static const vmath::vec3 eye_separation(0.01f, 0.0f, 0.0f);
+		static const vmath::vec3 eye_location(0.0f, 0.0f, -0.4f);
+
+		vmath::mat4 left_view_matrix =
+							vmath::lookat(eye_location - eye_separation,
+							origin,
+							up_vector);
+
+		vmath::mat4 right_view_matrix =
+							vmath::lookat(eye_location + eye_separation,
+							origin,
+							up_vector);
+
+		static const GLfloat black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+		//glDrawBuffer(GL_BACK);
+		//CheckGLErr();
+		//glClearBufferfv(GL_COLOR, 0, black);
+		///glClearBufferfv(GL_DEPTH, 0, &one);
+		//glDrawBuffer(GL_BACK_LEFT);
+
+		//draw_scene(left_view_matrix);
+		draw_scene();
 	}
 
+	private:
+		void draw_scene()
+		{
+		    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			static const GLfloat blue[] = { 1.0f, 1.0f, 0.0f, 0.0f };
+			glViewport(0, 0, info.windowWidth, info.windowHeight);
+			glClearBufferfv(GL_COLOR, 0, blue);
+			glClearBufferfv(GL_DEPTH, 0, &one);
+			
+			glBindTexture(GL_TEXTURE_2D_ARRAY, color_texture);
+			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			
+			glUseProgram(strender);
+			/*
+			vmath::mat4 model_matrix = vmath::mat4::identity();
+			
+
+			glUniformMatrix4fv(model_view_loc, 1, GL_FALSE,
+							eye_view_matrix * model_matrix);
+			*/
+
+			glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 2);
+			
+			glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+		}
+		
+		void checkShaderCompile(GLuint shader, const GLchar * desc)
+		{
+			char buffer[1024];
+			memset(buffer, 0, sizeof(buffer));
+			glGetShaderInfoLog(shader, 1024, NULL, buffer);
+			
+			if (strlen(buffer) != 0)
+				fprintf(stderr, "error happened in %s shader(%d): %s\n", desc, shader, buffer);
+		}
+
+		void checkGLErr(GLint line)
+		{
+			for(GLenum err; (err = glGetError()) != GL_NO_ERROR;)
+				fprintf(stdout, "line %d: Error found 0x%04x\n", line, err);
+		}
+
 	protected:
-		GLuint			stprogram;
+		GLuint			strender;
 		GLuint			render_prog;
 		GLuint			render_vao;
 		
@@ -240,6 +221,10 @@ class agao_app : public sb6::application
 		float			droplet_x_offset[256];
 		float			droplet_rot_speed[256];
 		float			droplet_fall_speed[256];
+		
+		GLuint fbo;
+		GLuint color_texture;
+		GLint model_view_loc;
 };
 
 DECLARE_MAIN(agao_app)

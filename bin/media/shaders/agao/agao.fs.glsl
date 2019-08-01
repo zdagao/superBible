@@ -1,17 +1,14 @@
 #version 330 core
 
-layout (location = 0) out vec4 color;
+out vec4 color;
 
-in VS_OUT
+in GS_OUT
 {
-	flat int alien;
-	vec2 tc;
-} fs_in;
-
-uniform sampler2DArray tex_aliens;
+	vec4 color;
+} gs_in;
 
 void main(void)
 {
-	color = texture(tex_aliens, vec3(fs_in.tc, float(fs_in.alien)));
+	 color = gs_in.color;
 }
 
