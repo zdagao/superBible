@@ -33,13 +33,15 @@ class linesmooth_app : public sb6::application
         sb6::application::init();
 
         memcpy(info.title, title, sizeof(title));
+		
+		info.samples = 8;
     }
 
     virtual void startup()
     {
         static const char * vs_source[] =
         {
-            "#version 410 core                                                  \n"
+            "#version 330 core                                                  \n"
             "                                                                   \n"
             "in vec4 position;                                                  \n"
             "                                                                   \n"
@@ -54,7 +56,7 @@ class linesmooth_app : public sb6::application
 
         static const char * fs_source[] =
         {
-            "#version 410 core                                                  \n"
+            "#version 330 core                                                  \n"
             "                                                                   \n"
             "out vec4 color;                                                    \n"
             "                                                                   \n"

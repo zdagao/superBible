@@ -1,11 +1,11 @@
-#version 420 core
+#version 330 core
 // hdr_adaptive.fs
 //
 //
 
 in vec2 vTex;
 
-layout (binding = 0) uniform sampler2D hdr_image;
+uniform sampler2D hdr_image;
 
 out vec4 oColor;
 

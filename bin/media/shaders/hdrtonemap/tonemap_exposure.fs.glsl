@@ -1,6 +1,6 @@
-#version 430 core
+#version 330 core
 
-layout (binding = 0) uniform sampler2D hdr_image;
+uniform sampler2D hdr_image;
 
 uniform float exposure = 1.0;
 

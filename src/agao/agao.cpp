@@ -42,7 +42,7 @@ class agao_app : public sb6::application
 	    GLuint  vs, fs, gs;
 		
 		vs = sb6::shader::load("../bin/media/shaders/agao/agao.vs.glsl", GL_VERTEX_SHADER);
-		checkShaderCompile(fs, "render_prog vs");
+		checkShaderCompile(vs, "render_prog vs");
 
 		fs = sb6::shader::load("../bin/media/shaders/agao/agao.fs.glsl", GL_FRAGMENT_SHADER);
 		checkShaderCompile(fs, "render_prog fs");
@@ -133,13 +133,15 @@ class agao_app : public sb6::application
 	    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
         static const GLfloat green[] = { 0.0f, 1.0f, 0.0f, 0.0f };
-		glViewport(0, 0, 512, 512);
+		glViewport(0, 0, 640, 640);
 		glClearBufferfv(GL_COLOR, 0, green);
 		glClearBufferfv(GL_DEPTH, 0, &one);
 		float t = (float)currentTime;
 
 		glUseProgram(render_prog);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+		CheckGLErr();
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+		CheckGLErr();
 
 		static const vmath::vec3 origin(0.0f);
 		static const vmath::vec3 up_vector(0.0f, 1.0f, 0.0f);
@@ -148,13 +150,13 @@ class agao_app : public sb6::application
 
 		vmath::mat4 left_view_matrix =
 							vmath::lookat(eye_location - eye_separation,
-							origin,
-							up_vector);
+										origin,
+										up_vector);
 
 		vmath::mat4 right_view_matrix =
 							vmath::lookat(eye_location + eye_separation,
-							origin,
-							up_vector);
+										origin,
+										up_vector);
 
 		static const GLfloat black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 		//glDrawBuffer(GL_BACK);
@@ -177,8 +179,8 @@ class agao_app : public sb6::application
 			glClearBufferfv(GL_DEPTH, 0, &one);
 			
 			glBindTexture(GL_TEXTURE_2D_ARRAY, color_texture);
-			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
-			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			//glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			//glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
 			
 			glUseProgram(strender);
 			/*

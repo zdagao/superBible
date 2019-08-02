@@ -1,5 +1,5 @@
 
-#version 420 core
+#version 330 core
 
 layout (location = 0) out vec4 color0;
 layout (location = 1) out vec4 color1;
@@ -24,7 +24,7 @@ struct material_t
     vec3    ambient_color;
 };
 
-layout (binding = 1, std140) uniform MATERIAL_BLOCK
+layout (std140) uniform MATERIAL_BLOCK
 {
     material_t  material[32];
 } materials;

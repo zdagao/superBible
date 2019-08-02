@@ -28,6 +28,14 @@
 #include <object.h>
 
 #include <string>
+#define CheckGLErr() {checkGLErr(__LINE__);}
+
+static void checkGLErr(GLint line)
+{
+	for(GLenum err; (err = glGetError()) != GL_NO_ERROR;)
+		fprintf(stdout, "line %d: Error found 0x%04x\n", line, err);
+}
+
 static void print_shader_log(GLuint shader)
 {
     std::string str;
@@ -128,7 +136,7 @@ public:
         glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 
-        object.load("media/objects/sphere.sbm");
+        object.load("../bin/media/objects/sphere.sbm");
 
         glGenBuffers(1, &ubo_transform);
         glBindBuffer(GL_UNIFORM_BUFFER, ubo_transform);
@@ -197,7 +205,8 @@ public:
 
         glUseProgram(program_render);
 
-        glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo_transform);
+		GLuint block_idx = glGetUniformBlockIndex(program_render, "TRANSFORM_BLOCK");
+        glBindBufferBase(GL_UNIFORM_BUFFER, block_idx, ubo_transform);
         struct transforms_t
         {
             vmath::mat4 mat_proj;
@@ -214,7 +223,9 @@ public:
             transforms->mat_model[i] = vmath::translate(cosf(t + fi) * 5.0f * r, sinf(t + fi * 4.0f) * 4.0f, sinf(t + fi) * 5.0f * r);
         }
         glUnmapBuffer(GL_UNIFORM_BUFFER);
-        glBindBufferBase(GL_UNIFORM_BUFFER, 1, ubo_material);
+		
+		block_idx = glGetUniformBlockIndex(program_render, "MATERIAL_BLOCK");		
+        glBindBufferBase(GL_UNIFORM_BUFFER, block_idx, ubo_material);
 
         glUniform1f(uniforms.scene.bloom_thresh_min, bloom_thresh_min);
         glUniform1f(uniforms.scene.bloom_thresh_max, bloom_thresh_max);
@@ -254,10 +265,14 @@ public:
         }
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		GLint location = glGetUniformLocation(program_resolve, "bloom_image");		
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, tex_filter[1]);
+		glUniform1i(location, 1);
+		location = glGetUniformLocation(program_resolve, "hdr_image");		
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, show_prefilter ? tex_brightpass : tex_scene);
+		glUniform1i(location, 0);
 
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
@@ -310,10 +325,10 @@ public:
             case 'P':
                     paused = !paused;
                 break;
-            case GLFW_KEY_KP_ADD:
+            case '=':
                     exposure *= 1.1f;
                 break;
-            case GLFW_KEY_KP_SUBTRACT:
+            case '-':
                     exposure /= 1.1f;
                 break;
         }
@@ -330,8 +345,8 @@ public:
         if (program_render)
             glDeleteProgram(program_render);
 
-        shaders.vs = sb6::shader::load("media/shaders/hdrbloom/hdrbloom-scene.vs.glsl", GL_VERTEX_SHADER);
-        shaders.fs = sb6::shader::load("media/shaders/hdrbloom/hdrbloom-scene.fs.glsl", GL_FRAGMENT_SHADER);
+        shaders.vs = sb6::shader::load("../bin/media/shaders/hdrbloom/hdrbloom-scene.vs.glsl", GL_VERTEX_SHADER);
+        shaders.fs = sb6::shader::load("../bin/media/shaders/hdrbloom/hdrbloom-scene.fs.glsl", GL_FRAGMENT_SHADER);
         program_render = sb6::program::link_from_shaders(&shaders.vs, 2, true);
 
         uniforms.scene.bloom_thresh_min = glGetUniformLocation(program_render, "bloom_thresh_min");
@@ -340,15 +355,15 @@ public:
         if (program_filter)
             glDeleteProgram(program_filter);
 
-        shaders.vs = sb6::shader::load("media/shaders/hdrbloom/hdrbloom-filter.vs.glsl", GL_VERTEX_SHADER);
-        shaders.fs = sb6::shader::load("media/shaders/hdrbloom/hdrbloom-filter.fs.glsl", GL_FRAGMENT_SHADER);
+        shaders.vs = sb6::shader::load("../bin/media/shaders/hdrbloom/hdrbloom-filter.vs.glsl", GL_VERTEX_SHADER);
+        shaders.fs = sb6::shader::load("../bin/media/shaders/hdrbloom/hdrbloom-filter.fs.glsl", GL_FRAGMENT_SHADER);
         program_filter = sb6::program::link_from_shaders(&shaders.vs, 2, true);
 
         if (program_resolve)
             glDeleteProgram(program_resolve);
 
-        shaders.vs = sb6::shader::load("media/shaders/hdrbloom/hdrbloom-resolve.vs.glsl", GL_VERTEX_SHADER);
-        shaders.fs = sb6::shader::load("media/shaders/hdrbloom/hdrbloom-resolve.fs.glsl", GL_FRAGMENT_SHADER);
+        shaders.vs = sb6::shader::load("../bin/media/shaders/hdrbloom/hdrbloom-resolve.vs.glsl", GL_VERTEX_SHADER);
+        shaders.fs = sb6::shader::load("../bin/media/shaders/hdrbloom/hdrbloom-resolve.fs.glsl", GL_FRAGMENT_SHADER);
         program_resolve = sb6::program::link_from_shaders(&shaders.vs, 2, true);
 
         uniforms.resolve.exposure = glGetUniformLocation(program_resolve, "exposure");

@@ -26,6 +26,14 @@
 #include <sb6ktx.h>
 
 #include <string>
+#define CheckGLErr() {checkGLErr(__LINE__);}
+
+static void checkGLErr(GLint line)
+{
+	for(GLenum err; (err = glGetError()) != GL_NO_ERROR;)
+		fprintf(stdout, "line %d: Error found 0x%04x\n", line, err);
+}
+
 static void print_shader_log(GLuint shader)
 {
     std::string str;
@@ -36,6 +44,7 @@ static void print_shader_log(GLuint shader)
     {
         str.resize(len);
         glGetShaderInfoLog(shader, len, NULL, &str[0]);
+		fprintf(stdout, "%s", str.c_str());
     }
 
 #ifdef _WIN32
@@ -45,7 +54,7 @@ static void print_shader_log(GLuint shader)
 
 static const char * vs_source[] =
 {
-    "#version 420 core                                                              \n"
+    "#version 330 core                                                              \n"
     "                                                                               \n"
     "void main(void)                                                                \n"
     "{                                                                              \n"
@@ -60,7 +69,7 @@ static const char * vs_source[] =
 
 static const char * fs_source[] =
 {
-    "#version 430 core                                                              \n"
+    "#version 330 core                                                              \n"
     "                                                                               \n"
     "uniform sampler2D s;                                                           \n"
     "                                                                               \n"
@@ -100,7 +109,7 @@ public:
         glGenTextures(1, &texture);
 
         // Load texture from file
-        sb6::ktx::file::load("media/textures/treelights_2k.ktx", texture);
+        sb6::ktx::file::load("../bin/media/textures/treelights_2k.ktx", texture);
 
         // Now bind it to the context using the GL_TEXTURE_2D binding point
         glBindTexture(GL_TEXTURE_2D, texture);
@@ -125,6 +134,7 @@ public:
 
         glGenVertexArrays(1, &vao);
         glBindVertexArray(vao);
+		CheckGLErr();
     }
 
     void shutdown(void)
@@ -140,8 +150,10 @@ public:
         glClearBufferfv(GL_COLOR, 0, green);
 
         glUseProgram(program);
+		
         glViewport(0, 0, info.windowWidth, info.windowHeight);
-        glUniform1f(0, exposure);
+		GLint location = glGetUniformLocation(program, "exposure");
+        glUniform1f(location, exposure);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
 
@@ -152,10 +164,10 @@ public:
 
         switch (key)
         {
-            case GLFW_KEY_KP_ADD:
+            case '=':
                     exposure *= 1.1f;
                 break;
-            case GLFW_KEY_KP_SUBTRACT:
+            case '-':
                     exposure /= 1.1f;
                 break;
         }

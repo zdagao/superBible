@@ -59,14 +59,20 @@ out GS_OUT
 	vec4 color;
 } gs_out;
 
+in vec4 vs_color[];
+
 void main(void)
 {
 	int i;
+	const vec3 colors[] = vec3[](vec3( 0.5, 0.0, 0.0),
+									vec3(0.0, 0.5, 0.0),
+									vec3( 0.0,  0.0, 0.5),
+									vec3( 0.5,  0.5, 0.5));
 	for (i = 0; i < gl_in.length(); i++)
 	{
 		gl_Layer = gl_InvocationID;
 		gl_Position = gl_in[i].gl_Position;
-		gs_out.color = vec4(gl_InvocationID, 0, 1, 1);
+		gs_out.color = vs_color[i] + vec4(colors[i].xyz*gl_InvocationID, 0.0);
 		EmitVertex();
 	}
 	EndPrimitive();

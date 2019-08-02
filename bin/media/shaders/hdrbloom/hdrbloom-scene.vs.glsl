@@ -1,4 +1,4 @@
-#version 420 core
+#version 330 core
 
 layout (location = 0) in vec4 position;
 layout (location = 1) in vec3 normal;
@@ -14,7 +14,7 @@ out VS_OUT
 // Position of light
 uniform vec3 light_pos = vec3(100.0, 100.0, 100.0);
 
-layout (binding = 0, std140) uniform TRANSFORM_BLOCK
+layout (std140) uniform TRANSFORM_BLOCK
 {
     mat4    mat_proj;
     mat4    mat_view;

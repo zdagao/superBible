@@ -39,14 +39,17 @@ class singlepoint_app : public sb6::application
         static const char * vs_source[] =
         {
             "#version 330 core                                                 \n"
-            "                                                                  \n"
+            "out vec4 vs_color;                                                                  \n"
             "void main(void)                                                   \n"
             "{                                                                 \n"
             "    const vec4 vertices[] = vec4[](vec4( 0.25, -0.25, 0.5, 1.0),  \n"
             "                                   vec4(-0.25, -0.25, 0.5, 1.0),  \n"
             "                                   vec4( 0.25,  0.25, 0.5, 1.0)); \n"
+				"	 const vec4 colors[] = vec4[](vec4( 1.0, 0.0, 0.0, 1.0),  \n"
+				"									vec4(0.0, 1.0, 0.0, 1.0),  \n"
+				"									vec4( 0.0,  0.0, 1.0, 1.0)); \n"
             "                                                                  \n"
-            "    gl_Position = vertices[gl_VertexID];                          \n"
+            "    gl_Position = vertices[gl_VertexID]; vs_color =  colors[gl_VertexID];                        \n"
             "}                                                                 \n"
         };
 
@@ -55,10 +58,10 @@ class singlepoint_app : public sb6::application
             "#version 330 core                                                 \n"
             "                                                                  \n"
             "out vec4 color;                                                   \n"
-            "                                                                  \n"
+            "in vec4 vs_color;                                                                  \n"
             "void main(void)                                                   \n"
             "{                                                                 \n"
-            "    color = vec4(1.0, 0.8, 1.0, 1.0);                             \n"
+            "    color = vs_color;                             \n"
             "}                                                                 \n"
         };
 

@@ -66,7 +66,7 @@ public:
     void startup(void)
     {
         // Load texture from file
-        tex_src = sb6::ktx::file::load("media/textures/treelights_2k.ktx");
+        tex_src = sb6::ktx::file::load("../bin/media/textures/treelights_2k.ktx");
 
         // Now bind it to the context using the GL_TEXTURE_2D binding point
         glBindTexture(GL_TEXTURE_2D, tex_src);
@@ -144,10 +144,10 @@ public:
             case 'M':
                     mode = (mode + 1) % 3;
                 break;
-            case GLFW_KEY_KP_ADD:
+            case '=':
                     exposure *= 1.1f;
                 break;
-            case GLFW_KEY_KP_SUBTRACT:
+            case '-':
                     exposure /= 1.1f;
                 break;
         }
@@ -163,8 +163,8 @@ public:
 
         program_naive = glCreateProgram();
 
-        vs = sb6::shader::load("media/shaders/hdrtonemap/tonemap.vs.glsl", GL_VERTEX_SHADER);
-        fs = sb6::shader::load("media/shaders/hdrtonemap/tonemap_naive.fs.glsl", GL_FRAGMENT_SHADER);
+        vs = sb6::shader::load("../bin/media/shaders/hdrtonemap/tonemap.vs.glsl", GL_VERTEX_SHADER);
+        fs = sb6::shader::load("../bin/media/shaders/hdrtonemap/tonemap_naive.fs.glsl", GL_FRAGMENT_SHADER);
 
         glAttachShader(program_naive, vs);
         glAttachShader(program_naive, fs);
@@ -173,7 +173,7 @@ public:
 
         glDeleteShader(fs);
 
-        fs = sb6::shader::load("media/shaders/hdrtonemap/tonemap_adaptive.fs.glsl", GL_FRAGMENT_SHADER);
+        fs = sb6::shader::load("../bin/media/shaders/hdrtonemap/tonemap_adaptive.fs.glsl", GL_FRAGMENT_SHADER);
 
         if (program_adaptive)
             glDeleteProgram(program_adaptive);
@@ -187,7 +187,7 @@ public:
 
         glDeleteShader(fs);
 
-        fs = sb6::shader::load("media/shaders/hdrtonemap/tonemap_exposure.fs.glsl", GL_FRAGMENT_SHADER);
+        fs = sb6::shader::load("../bin/media/shaders/hdrtonemap/tonemap_exposure.fs.glsl", GL_FRAGMENT_SHADER);
 
         if (program_exposure)
             glDeleteProgram(program_exposure);
