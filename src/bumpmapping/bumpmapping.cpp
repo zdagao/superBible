@@ -30,6 +30,13 @@
 
 #include <cstdio>
 
+#define CheckGLErr() {checkGLErr(__LINE__);}
+static void checkGLErr(GLint line)
+{
+	for(GLenum err; (err = glGetError()) != GL_NO_ERROR;)
+		fprintf(stdout, "line %d: Error found 0x%04x\n", line, err);
+}
+
 class bumpmapping_app : public sb6::application
 {
 public:
@@ -76,11 +83,11 @@ void bumpmapping_app::startup()
     load_shaders();
 
     glActiveTexture(GL_TEXTURE0);
-    textures.color = sb6::ktx::file::load("media/textures/ladybug_co.ktx");
+    textures.color = sb6::ktx::file::load("../bin/media/textures/ladybug_co.ktx");
     glActiveTexture(GL_TEXTURE1);
-    textures.normals = sb6::ktx::file::load("media/textures/ladybug_nm.ktx");
+    textures.normals = sb6::ktx::file::load("../bin/media/textures/ladybug_nm.ktx");
 
-    object.load("media/objects/ladybug.sbm");
+    object.load("../bin/media/objects/ladybug.sbm");
 }
 
 void bumpmapping_app::render(double currentTime)
@@ -104,6 +111,11 @@ void bumpmapping_app::render(double currentTime)
     glEnable(GL_DEPTH_TEST);
 
     glUseProgram(program);
+	GLuint sampler_location = glGetUniformLocation(program, "tex_color");
+	glUniform1i(sampler_location, 0);
+	//CheckGLErr();
+	sampler_location = glGetUniformLocation(program, "tex_normal");
+	glUniform1i(sampler_location, 1);
 
     vmath::mat4 proj_matrix = vmath::perspective(50.0f,
                                                     (float)info.windowWidth / (float)info.windowHeight,
@@ -191,8 +203,8 @@ void bumpmapping_app::load_shaders()
     GLuint vs;
     GLuint fs;
 
-    vs = sb6::shader::load("media/shaders/bumpmapping/bumpmapping.vs.glsl", GL_VERTEX_SHADER);
-    fs = sb6::shader::load("media/shaders/bumpmapping/bumpmapping.fs.glsl", GL_FRAGMENT_SHADER);
+    vs = sb6::shader::load("../bin/media/shaders/bumpmapping/bumpmapping.vs.glsl", GL_VERTEX_SHADER);
+    fs = sb6::shader::load("../bin/media/shaders/bumpmapping/bumpmapping.fs.glsl", GL_FRAGMENT_SHADER);
 
     if (program)
         glDeleteProgram(program);

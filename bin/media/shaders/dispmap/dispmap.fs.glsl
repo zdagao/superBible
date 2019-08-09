@@ -2,7 +2,7 @@
 
 out vec4 color;
 
-layout (binding = 1) uniform sampler2D tex_color;
+uniform sampler2D tex_color;
 
 uniform bool enable_fog = true;
 uniform vec4 fog_color = vec4(0.7, 0.8, 0.9, 0.0);

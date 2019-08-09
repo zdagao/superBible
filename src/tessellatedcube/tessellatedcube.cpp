@@ -27,6 +27,27 @@
 // Remove this to draw only a single cube!
 #define MANY_CUBES
 
+static void checkShaderCompile(GLuint shader, const GLchar * desc)
+{
+	if (shader == 0) {
+		fprintf(stderr, "invalid shader.\n");
+		return;
+	}
+	char buffer[1024];
+	memset(buffer, 0, sizeof(buffer));
+	glGetShaderInfoLog(shader, 1024, NULL, buffer);
+	
+	if (strlen(buffer) != 0)
+		fprintf(stderr, "error happened in %s shader(%d): %s\n", desc, shader, buffer);
+}
+
+#define CheckGLErr() {checkGLErr(__LINE__);}
+static void checkGLErr(GLint line)
+{
+	for(GLenum err; (err = glGetError()) != GL_NO_ERROR;)
+		fprintf(stdout, "line %d: Error found 0x%04x\n", line, err);
+}
+
 class tessellatedcube_app : public sb6::application
 {
 public:
@@ -199,6 +220,7 @@ public:
         GLuint tes = glCreateShader(GL_TESS_EVALUATION_SHADER);
         glShaderSource(tes, 1, tes_source, NULL);
         glCompileShader(tes);
+		checkShaderCompile(tes, "tes");
 
         glAttachShader(program, vs);
         glAttachShader(program, tcs);

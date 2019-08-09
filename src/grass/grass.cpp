@@ -188,29 +188,19 @@ public:
 
         uniforms.mvpMatrix = glGetUniformLocation(grass_program, "mvpMatrix");
 
-		GLuint sampler_location;
-
         glActiveTexture(GL_TEXTURE1);
-		glTransformFeedbackVaryings
         tex_grass_length = sb6::ktx::file::load("../bin/media/textures/grass_length.ktx");
-		sampler_location = glGetUniformLocation(grass_program, "length_texture");
-		fprintf(stdout, "tex_grass_length %d\n", tex_grass_length);
-		glUniform1i(sampler_location, 1);
 
 		checkGLErr(__LINE__);
 		
         glActiveTexture(GL_TEXTURE2);
         tex_grass_orientation = sb6::ktx::file::load("../bin/media/textures/grass_orientation.ktx");
-		sampler_location = glGetUniformLocation(grass_program, "orientation_texture");
-		fprintf(stdout, "tex_grass_orientation %d\n", tex_grass_orientation);
 		
         glActiveTexture(GL_TEXTURE3);
         tex_grass_color = sb6::ktx::file::load("../bin/media/textures/grass_color.ktx");
-		sampler_location = glGetUniformLocation(grass_program, "grasscolor_texture");
 		
         glActiveTexture(GL_TEXTURE4);
         tex_grass_bend = sb6::ktx::file::load("../bin/media/textures/grass_bend.ktx");
-		sampler_location = glGetUniformLocation(grass_program, "bend_texture");
     }
 
     void shutdown(void)
@@ -234,6 +224,22 @@ public:
         vmath::mat4 prj_matrix = vmath::perspective(45.0f, (float)info.windowWidth / (float)info.windowHeight, 0.1f, 1000.0f);
 
         glUseProgram(grass_program);
+
+		
+		GLuint sampler_location;
+
+		sampler_location = glGetUniformLocation(grass_program, "length_texture");
+		glUniform1i(sampler_location, 1);
+		
+		sampler_location = glGetUniformLocation(grass_program, "orientation_texture");
+		glUniform1i(sampler_location, 2);
+
+		sampler_location = glGetUniformLocation(grass_program, "grasscolor_texture");
+		glUniform1i(sampler_location, 3);
+
+		sampler_location = glGetUniformLocation(grass_program, "bend_texture");
+		glUniform1i(sampler_location, 4);
+
         glUniformMatrix4fv(uniforms.mvpMatrix, 1, GL_FALSE, (prj_matrix * mv_matrix));
 
         glEnable(GL_DEPTH_TEST);

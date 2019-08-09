@@ -24,6 +24,27 @@
 #include <sb6.h>
 #include <shader.h>
 #include <vmath.h>
+#define CheckGLErr() {checkGLErr(__LINE__);}
+
+static void checkShaderCompile(GLuint shader, const GLchar * desc)
+{
+	if (shader == 0) {
+		fprintf(stderr, "invalid shader.\n");
+		return;
+	}
+	char buffer[1024];
+	memset(buffer, 0, sizeof(buffer));
+	glGetShaderInfoLog(shader, 1024, NULL, buffer);
+	
+	if (strlen(buffer) != 0)
+		fprintf(stderr, "error happened in %s shader(%d): %s\n", desc, shader, buffer);
+}
+
+static void checkGLErr(GLint line)
+{
+	for(GLenum err; (err = glGetError()) != GL_NO_ERROR;)
+		fprintf(stdout, "line %d: Error found 0x%04x\n", line, err);
+}
 
 class sparsetexture_app : public sb6::application
 {
@@ -103,11 +124,14 @@ void sparsetexture_app::startup()
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
 
+	CheckGLErr();
     glTexStorageSparseAMD(GL_TEXTURE_2D, GL_RGBA8, 8192, 8192, 1, 1, GL_TEXTURE_STORAGE_SPARSE_BIT_AMD);
+	CheckGLErr();
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     glGenVertexArrays(1, &vao);
+	CheckGLErr();
 
     load_shaders();
 
@@ -125,6 +149,7 @@ void sparsetexture_app::startup()
             texture_data[y * 2048 + x * 4 + 3] = 0;
         }
     }
+	CheckGLErr();
 }
 
 void sparsetexture_app::render(double currentTime)
@@ -191,8 +216,10 @@ void sparsetexture_app::load_shaders()
 {
     GLuint shaders[2];
 
-    shaders[0] = sb6::shader::load("media/shaders/sparsetexture/render.vs.glsl", GL_VERTEX_SHADER);
-    shaders[1] = sb6::shader::load("media/shaders/sparsetexture/render.fs.glsl", GL_FRAGMENT_SHADER);
+    shaders[0] = sb6::shader::load("../bin/media/shaders/sparsetexture/render.vs.glsl", GL_VERTEX_SHADER);
+	checkShaderCompile(shaders[0], "sparsetexture vs");
+    shaders[1] = sb6::shader::load("../bin/media/shaders/sparsetexture/render.fs.glsl", GL_FRAGMENT_SHADER);
+	checkShaderCompile(shaders[1], "sparsetexture fs");
 
     program = sb6::program::link_from_shaders(shaders, 2, true);
 

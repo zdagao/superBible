@@ -1,7 +1,7 @@
-#version 420 core
+#version 330 core
 
-layout (binding = 0) uniform sampler3D tex_envmap;
-layout (binding = 1) uniform sampler2D tex_glossmap;
+uniform sampler3D tex_envmap;
+uniform sampler2D tex_glossmap;
 
 in VS_OUT
 {
@@ -32,4 +32,5 @@ void main(void)
 
     // Sample from two-level environment map
     color = texture(tex_envmap, env_coord);
+    //color = vec4(r, 1);
 }

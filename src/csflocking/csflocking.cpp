@@ -26,6 +26,21 @@
 #include <shader.h>
 
 #include <string>
+
+static void checkShaderCompile(GLuint shader, const GLchar * desc)
+{
+	if (shader == 0) {
+		fprintf(stderr, "invalid shader.\n");
+		return;
+	}
+	char buffer[1024];
+	memset(buffer, 0, sizeof(buffer));
+	glGetShaderInfoLog(shader, 1024, NULL, buffer);
+	
+	if (strlen(buffer) != 0)
+		fprintf(stderr, "error happened in %s shader(%d): %s\n", desc, shader, buffer);
+}
+
 static void print_shader_log(GLuint shader)
 {
     std::string str;
@@ -216,14 +231,15 @@ public:
             GLuint cs;
         } shaders;
 
-        shaders.cs = sb6::shader::load("media/shaders/flocking/flocking.cs.glsl", GL_COMPUTE_SHADER);
+        shaders.cs = sb6::shader::load("../bin/media/shaders/flocking/flocking.cs.glsl", GL_COMPUTE_SHADER);
+		checkShaderCompile(shaders.cs, "flocking");
 
         flock_update_program = sb6::program::link_from_shaders(&shaders.cs, 1, true);
 
         uniforms.update.goal = glGetUniformLocation(flock_update_program, "goal");
 
-        shaders.vs = sb6::shader::load("media/shaders/flocking/render.vs.glsl", GL_VERTEX_SHADER);
-        shaders.fs = sb6::shader::load("media/shaders/flocking/render.fs.glsl", GL_FRAGMENT_SHADER);
+        shaders.vs = sb6::shader::load("../bin/media/shaders/flocking/render.vs.glsl", GL_VERTEX_SHADER);
+        shaders.fs = sb6::shader::load("../bin/media/shaders/flocking/render.fs.glsl", GL_FRAGMENT_SHADER);
 
         flock_render_program = sb6::program::link_from_shaders(&shaders.vs, 2, true);
 

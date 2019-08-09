@@ -1,9 +1,9 @@
-#version 420
+#version 330
 
 layout (location = 0) out vec4 color_out;
 
-layout (binding = 0) uniform usampler2D gbuf_tex0;
-layout (binding = 1) uniform sampler2D gbuf_tex1;
+uniform usampler2D gbuf_tex0;
+uniform sampler2D gbuf_tex1;
 
 struct light_t
 {
@@ -36,7 +36,7 @@ void unpackGBuffer(ivec2 coord,
     vec4 data1 = texelFetch(gbuf_tex1, ivec2(coord), 0);
     vec2 temp;
 
-    temp = unpackHalf2x16(data0.y);
+    temp = vec2((float)(data0.y && 0xffff), float(data0.y >> 16));
     fragment.color = vec3(unpackHalf2x16(data0.x), temp.x);
     fragment.normal = normalize(vec3(temp.y, unpackHalf2x16(data0.z)));
     fragment.material_id = data0.w;

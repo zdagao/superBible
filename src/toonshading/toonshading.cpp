@@ -51,8 +51,11 @@ protected:
         static const GLubyte toon_tex_data[] =
         {
             0x44, 0x00, 0x00, 0x00,
+			0x66, 0x00, 0x00, 0x00,
             0x88, 0x00, 0x00, 0x00,
+			0xAA, 0x00, 0x00, 0x00,
             0xCC, 0x00, 0x00, 0x00,
+			0xDD, 0x00, 0x00, 0x00,
             0xFF, 0x00, 0x00, 0x00
         };
 
@@ -67,7 +70,7 @@ protected:
         glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 
-        object.load("media/objects/torus_nrms_tc.sbm");
+        object.load("../bin/media/objects/torus_nrms_tc.sbm");
 
         load_shaders();
 
@@ -114,8 +117,8 @@ protected:
 
         GLuint vs, fs;
 
-        vs = sb6::shader::load("media/shaders/toonshading/toonshading.vs.glsl", GL_VERTEX_SHADER);
-        fs = sb6::shader::load("media/shaders/toonshading/toonshading.fs.glsl", GL_FRAGMENT_SHADER);
+        vs = sb6::shader::load("../bin/media/shaders/toonshading/toonshading.vs.glsl", GL_VERTEX_SHADER);
+        fs = sb6::shader::load("../bin/media/shaders/toonshading/toonshading.fs.glsl", GL_FRAGMENT_SHADER);
 
         render_prog = glCreateProgram();
         glAttachShader(render_prog, vs);

@@ -133,6 +133,7 @@ void object::load(const char * filename)
                               attrib_decl.stride,
                               (GLvoid *)(uintptr_t)attrib_decl.data_offset);
         glEnableVertexAttribArray(i);
+    	fprintf(stdout, "load object %d %s\n", i, attrib_decl.name);
     }
 
     if (index_data_chunk != NULL)

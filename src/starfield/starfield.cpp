@@ -66,7 +66,7 @@ class starfield_app : public sb6::application
 
         static const char * fs_source[] =
         {
-            "#version 410 core                                              \n"
+            "#version 330 core                                              \n"
             "                                                               \n"
             "layout (location = 0) out vec4 color;                          \n"
             "                                                               \n"
@@ -81,7 +81,7 @@ class starfield_app : public sb6::application
 
         static const char * vs_source[] =
         {
-            "#version 410 core                                              \n"
+            "#version 330 core                                              \n"
             "                                                               \n"
             "layout (location = 0) in vec4 position;                        \n"
             "layout (location = 1) in vec4 color;                           \n"
@@ -127,7 +127,7 @@ class starfield_app : public sb6::application
         uniforms.time = glGetUniformLocation(render_prog, "time");
         uniforms.proj_matrix = glGetUniformLocation(render_prog, "proj_matrix");
 
-        star_texture = sb6::ktx::file::load("media/textures/star.ktx");
+        star_texture = sb6::ktx::file::load("../bin/media/textures/star.ktx");
 
         glGenVertexArrays(1, &star_vao);
         glBindVertexArray(star_vao);

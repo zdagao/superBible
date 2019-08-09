@@ -1,4 +1,4 @@
-#version 420 core
+#version 330 core
 
 layout (location = 0) out uvec4 color0;
 layout (location = 1) out vec4 color1;
@@ -12,7 +12,7 @@ in VS_OUT
     flat uint    material_id;
 } fs_in;
 
-layout (binding = 0) uniform sampler2D tex_diffuse;
+uniform sampler2D tex_diffuse;
 
 void main(void)
 {

@@ -1,6 +1,6 @@
-#version 420
+#version 330
 
-layout (binding = 0) uniform sampler2D tex_depth;
+uniform sampler2D tex_depth;
 
 layout (location = 0) out vec4 color;
 

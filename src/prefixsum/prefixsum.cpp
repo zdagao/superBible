@@ -46,6 +46,27 @@ static inline float random_float()
     return (res - 1.0f);
 }
 
+static void checkShaderCompile(GLuint shader, const GLchar * desc)
+{
+	if (shader == 0) {
+		fprintf(stderr, "invalid shader.\n");
+		return;
+	}
+	char buffer[1024];
+	memset(buffer, 0, sizeof(buffer));
+	glGetShaderInfoLog(shader, 1024, NULL, buffer);
+	
+	if (strlen(buffer) != 0)
+		fprintf(stderr, "error happened in %s shader(%d): %s\n", desc, shader, buffer);
+}
+
+#define CheckGLErr() {checkGLErr(__LINE__);}
+static void checkGLErr(GLint line)
+{
+	for(GLenum err; (err = glGetError()) != GL_NO_ERROR;)
+		fprintf(stdout, "line %d: Error found 0x%04x\n", line, err);
+}
+
 class prefixsum_app : public sb6::application
 {
 public:
@@ -147,7 +168,10 @@ void prefixsum_app::onKey(int key, int action)
 
 void prefixsum_app::load_shaders()
 {
-    GLuint cs = sb6::shader::load("media/shaders/prefixsum/prefixsum.cs.glsl", GL_COMPUTE_SHADER);
+	CheckGLErr();
+    GLuint cs = sb6::shader::load("../bin/media/shaders/prefixsum/prefixsum.cs.glsl", GL_COMPUTE_SHADER);
+	CheckGLErr();
+	checkShaderCompile(cs, "prefexsum");
 
     if (prefix_sum_prog)
         glDeleteProgram(prefix_sum_prog);

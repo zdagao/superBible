@@ -1,8 +1,8 @@
-#version 440 core
+#version 330 core
 
-layout (binding = 0) uniform sampler2D sparseTex;
+uniform sampler2D sparseTex;
 
-layout (binding = 0, std140) uniform TEXURE_BLOCK
+layout (std140) uniform TEXURE_BLOCK
 {
     uint foo;
 };

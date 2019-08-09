@@ -1,9 +1,9 @@
-#version 420
+#version 330
 
 layout (location = 0) out vec4 color_out;
 
-layout (binding = 0) uniform usampler2D gbuf_tex0;
-layout (binding = 1) uniform sampler2D gbuf_tex1;
+uniform usampler2D gbuf_tex0;
+uniform sampler2D gbuf_tex1;	
 
 struct light_t
 {

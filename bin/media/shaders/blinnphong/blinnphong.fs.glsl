@@ -1,4 +1,4 @@
-#version 410 core
+#version 330 core
 
 // Output
 layout (location = 0) out vec4 color;
@@ -15,6 +15,7 @@ in VS_OUT
 uniform vec3 diffuse_albedo = vec3(0.5, 0.2, 0.7);
 uniform vec3 specular_albedo = vec3(0.7);
 uniform float specular_power = 200.0;
+uniform vec3 ambient = vec3(0.1, 0.1, 0.1);
 
 void main(void)
 {
@@ -29,5 +30,5 @@ void main(void)
     vec3 specular = pow(max(dot(N, H), 0.0), specular_power) * specular_albedo;
 
     // Write final color to the framebuffer
-    color = vec4(diffuse + specular, 1.0);
+    color = vec4(ambient + diffuse + specular, 1.0);
 }

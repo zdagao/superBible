@@ -234,6 +234,8 @@ unsigned int load(const char * filename, unsigned int tex)
         h.miplevels = 1;
     }
 
+	//fprintf(stdout, "texture load target %04x w %d h %d\n", target, h.pixelwidth, h.pixelheight);
+
     switch (target)
     {
         case GL_TEXTURE_1D:
