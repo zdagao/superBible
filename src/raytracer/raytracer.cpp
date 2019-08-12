@@ -245,9 +245,6 @@ void raytracer_app::startup()
 
 void raytracer_app::render(double currentTime)
 {
-static int bb = 0;
-if (bb == 1) return;
-bb = 1;
     static const GLfloat zeros[] = { 0.0f, 0.0f, 0.0f, 0.0f };
     static const GLfloat gray[] = { 0.1f, 0.1f, 0.1f, 0.0f };
     static const GLfloat ones[] = { 1.0f };
