@@ -28,6 +28,27 @@
 #include <sb6ktx.h>
 #include <shader.h>
 
+static void checkShaderCompile(GLuint shader, const GLchar * desc)
+{
+	if (shader == 0) {
+		fprintf(stderr, "invalid shader.\n");
+		return;
+	}
+	char buffer[1024];
+	memset(buffer, 0, sizeof(buffer));
+	glGetShaderInfoLog(shader, 1024, NULL, buffer);
+	
+	if (strlen(buffer) != 0)
+		fprintf(stderr, "error happened in %s shader(%d): %s\n", desc, shader, buffer);
+}
+
+#define CheckGLErr() {checkGLErr(__LINE__);}
+static void checkGLErr(GLint line)
+{
+	for(GLenum err; (err = glGetError()) != GL_NO_ERROR;)
+		fprintf(stdout, "line %d: Error found 0x%04x\n", line, err);
+}
+
 class raytracer_app : public sb6::application
 {
 public:
@@ -218,10 +239,15 @@ void raytracer_app::startup()
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
+
+	CheckGLErr();
 }
 
 void raytracer_app::render(double currentTime)
 {
+static int bb = 0;
+if (bb == 1) return;
+bb = 1;
     static const GLfloat zeros[] = { 0.0f, 0.0f, 0.0f, 0.0f };
     static const GLfloat gray[] = { 0.1f, 0.1f, 0.1f, 0.0f };
     static const GLfloat ones[] = { 1.0f };
@@ -259,8 +285,10 @@ void raytracer_app::render(double currentTime)
 
     glUnmapBuffer(GL_UNIFORM_BUFFER);
 
-    glBindBufferBase(GL_UNIFORM_BUFFER, 1, sphere_buffer);
+	GLuint idx = glGetUniformBlockIndex(trace_program, "SPHERES");
+    glBindBufferBase(GL_UNIFORM_BUFFER, idx, sphere_buffer);
     sphere * s = (sphere *)glMapBufferRange(GL_UNIFORM_BUFFER, 0, 128 * sizeof(sphere), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+	CheckGLErr();
 
     int i;
 
@@ -280,8 +308,10 @@ void raytracer_app::render(double currentTime)
     }
 
     glUnmapBuffer(GL_UNIFORM_BUFFER);
+	CheckGLErr();
 
-    glBindBufferBase(GL_UNIFORM_BUFFER, 2, plane_buffer);
+	idx = glGetUniformBlockIndex(trace_program, "PLANES");
+    glBindBufferBase(GL_UNIFORM_BUFFER, idx, plane_buffer);
     plane * p = (plane *)glMapBufferRange(GL_UNIFORM_BUFFER, 0, 128 * sizeof(plane), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
 
     //for (i = 0; i < 1; i++)
@@ -307,8 +337,10 @@ void raytracer_app::render(double currentTime)
 
     glUnmapBuffer(GL_UNIFORM_BUFFER);
 
-    glBindBufferBase(GL_UNIFORM_BUFFER, 3, light_buffer);
+	idx = glGetUniformBlockIndex(trace_program, "LIGHTS");
+    glBindBufferBase(GL_UNIFORM_BUFFER, idx, light_buffer);
     light * l = (light *)glMapBufferRange(GL_UNIFORM_BUFFER, 0, 128 * sizeof(light), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+	CheckGLErr();
 
     f *= 1.0f;
 
@@ -327,9 +359,11 @@ void raytracer_app::render(double currentTime)
 
     glUseProgram(prepare_program);
     glUniformMatrix4fv(uniforms.ray_lookat, 1, GL_FALSE, view_matrix);
+	CheckGLErr();
     glUniform3fv(uniforms.ray_origin, 1, view_position);
     glUniform1f(uniforms.aspect, (float)info.windowHeight / (float)info.windowWidth);
     glBindFramebuffer(GL_FRAMEBUFFER, ray_fbo[0]);
+	CheckGLErr();
     static const GLenum draw_buffers[] =
     {
         GL_COLOR_ATTACHMENT0,
@@ -340,11 +374,15 @@ void raytracer_app::render(double currentTime)
         GL_COLOR_ATTACHMENT5
     };
     glDrawBuffers(6, draw_buffers);
+	CheckGLErr();
+	GLenum en = glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER);
+	fprintf(stdout, "framebuffer state 0x%x 0x%x\n", en, GL_FRAMEBUFFER_COMPLETE);
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	CheckGLErr();
 
     glUseProgram(trace_program);
-    recurse(0);
+	recurse(0);
 
     glUseProgram(blit_program);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -369,6 +407,7 @@ void raytracer_app::render(double currentTime)
             glBindTexture(GL_TEXTURE_2D, tex_refraction_intensity[debug_depth]);
             break;
     }
+	glUniform1i(glGetUniformLocation(blit_program, "tex_composite"), 0);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     /*
@@ -379,11 +418,13 @@ void raytracer_app::render(double currentTime)
     glBindVertexArray(vao);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     */
+   	CheckGLErr();
 }
 
 void raytracer_app::recurse(int depth)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, ray_fbo[depth + 1]);
+	CheckGLErr();
 
     static const GLenum draw_buffers[] =
     {
@@ -394,25 +435,34 @@ void raytracer_app::recurse(int depth)
         GL_COLOR_ATTACHMENT4,
         GL_COLOR_ATTACHMENT5
     };
+	CheckGLErr();
     glDrawBuffers(6, draw_buffers);
 
+	CheckGLErr();
     glEnablei(GL_BLEND, 0);
     glBlendFunci(0, GL_ONE, GL_ONE);
 
+	CheckGLErr();
     // static const float zeros[] = { 0.0f, 0.0f, 0.0f, 0.0f };
     // glClearBufferfv(GL_COLOR, 0, zeros);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, tex_position[depth]);
+	glUniform1i(glGetUniformLocation(trace_program, "tex_origin"), 0);
+	CheckGLErr();
 
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, tex_reflected[depth]);
+	glUniform1i(glGetUniformLocation(trace_program, "tex_direction"), 1);
 
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, tex_reflection_intensity[depth]);
+	glUniform1i(glGetUniformLocation(trace_program, "tex_color"), 2);
 
     // Render
+	CheckGLErr();
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	CheckGLErr();
 
     if (depth != (max_depth - 1))
     {
@@ -438,6 +488,7 @@ void raytracer_app::recurse(int depth)
     //**/
 
     glDisablei(GL_BLEND, 0);
+	CheckGLErr();
 }
 
 void raytracer_app::onKey(int key, int action)
@@ -495,8 +546,10 @@ void raytracer_app::load_shaders()
 {
     GLuint      shaders[2];
 
-    shaders[0] = sb6::shader::load("media/shaders/raytracer/trace-prepare.vs.glsl", GL_VERTEX_SHADER);
-    shaders[1] = sb6::shader::load("media/shaders/raytracer/trace-prepare.fs.glsl", GL_FRAGMENT_SHADER);
+    shaders[0] = sb6::shader::load("../bin/media/shaders/raytracer/trace-prepare.vs.glsl", GL_VERTEX_SHADER);
+	checkShaderCompile(shaders[0], "trace-prepare.vs");
+    shaders[1] = sb6::shader::load("../bin/media/shaders/raytracer/trace-prepare.fs.glsl", GL_FRAGMENT_SHADER);
+	checkShaderCompile(shaders[1], "trace-prepare.fs");
 
     if (prepare_program != 0)
         glDeleteProgram(prepare_program);
@@ -507,21 +560,26 @@ void raytracer_app::load_shaders()
     uniforms.ray_lookat = glGetUniformLocation(prepare_program, "ray_lookat");
     uniforms.aspect = glGetUniformLocation(prepare_program, "aspect");
 
-    shaders[0] = sb6::shader::load("media/shaders/raytracer/raytracer.vs.glsl", GL_VERTEX_SHADER);
-    shaders[1] = sb6::shader::load("media/shaders/raytracer/raytracer.fs.glsl", GL_FRAGMENT_SHADER);
+    shaders[0] = sb6::shader::load("../bin/media/shaders/raytracer/raytracer.vs.glsl", GL_VERTEX_SHADER);
+	checkShaderCompile(shaders[0], "raytracer.vs");
+    shaders[1] = sb6::shader::load("../bin/media/shaders/raytracer/raytracer.fs.glsl", GL_FRAGMENT_SHADER);
+	checkShaderCompile(shaders[1], "raytracer.fs");
 
     if (trace_program)
         glDeleteProgram(trace_program);
 
     trace_program = sb6::program::link_from_shaders(shaders, 2, true);
 
-    shaders[0] = sb6::shader::load("media/shaders/raytracer/blit.vs.glsl", GL_VERTEX_SHADER);
-    shaders[1] = sb6::shader::load("media/shaders/raytracer/blit.fs.glsl", GL_FRAGMENT_SHADER);
+    shaders[0] = sb6::shader::load("../bin/media/shaders/raytracer/blit.vs.glsl", GL_VERTEX_SHADER);
+	checkShaderCompile(shaders[0], "blit.vs");
+    shaders[1] = sb6::shader::load("../bin/media/shaders/raytracer/blit.fs.glsl", GL_FRAGMENT_SHADER);
+	checkShaderCompile(shaders[1], "blit.fs");
 
     if (blit_program)
         glDeleteProgram(blit_program);
 
     blit_program = sb6::program::link_from_shaders(shaders, 2, true);
+	CheckGLErr();
 }
 
 DECLARE_MAIN(raytracer_app)

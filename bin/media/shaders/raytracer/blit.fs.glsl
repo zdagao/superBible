@@ -1,6 +1,6 @@
-#version 420 core
+#version 330 core
 
-layout (binding = 0) uniform sampler2D tex_composite;
+uniform sampler2D tex_composite;
 
 layout (location = 0) out vec4 color;
 

@@ -1,4 +1,5 @@
-#version 420
+#version 330
+#extension GL_ARB_shading_language_420pack : require
 
 layout (location = 0) out vec3 color;
 layout (location = 1) out vec3 position;
@@ -7,9 +8,9 @@ layout (location = 3) out vec3 refracted;
 layout (location = 4) out vec3 reflected_color;
 layout (location = 5) out vec3 refracted_color;
 
-layout (binding = 0) uniform sampler2D tex_origin;
-layout (binding = 1) uniform sampler2D tex_direction;
-layout (binding = 2) uniform sampler2D tex_color;
+uniform sampler2D tex_origin;
+uniform sampler2D tex_direction;
+uniform sampler2D tex_color;
 
 struct ray
 {
@@ -29,17 +30,17 @@ struct light
     vec3 position;
 };
 
-layout (std140, binding = 1) uniform SPHERES
+layout (std140) uniform SPHERES
 {
     sphere      S[128];
 };
 
-layout (std140, binding = 2) uniform PLANES
+layout (std140) uniform PLANES
 {
     vec4        P[128];
 };
 
-layout (std140, binding = 3) uniform LIGHTS
+layout (std140) uniform LIGHTS
 {
     light       L[120];
 } lights;
