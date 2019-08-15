@@ -1,8 +1,8 @@
-#version 430 core
+#version 330 core
 
 // Samplers for pre-rendered color, normal and depth
-layout (binding = 0) uniform sampler2D sColor;
-layout (binding = 1) uniform sampler2D sNormalDepth;
+uniform sampler2D sColor;
+uniform sampler2D sNormalDepth;
 
 // Final output
 layout (location = 0) out vec4 color;
@@ -12,12 +12,12 @@ uniform float ssao_level = 1.0;
 uniform float object_level = 1.0;
 uniform float ssao_radius = 5.0;
 uniform bool weight_by_angle = true;
-uniform uint point_count = 8;
+uniform int point_count = 8;
 uniform bool randomize_points = true;
 
 // Uniform block containing up to 256 random directions (x,y,z,0)
 // and 256 more completely random vectors
-layout (binding = 0, std140) uniform SAMPLE_POINTS
+layout (std140) uniform SAMPLE_POINTS
 {
     vec4 pos[256];
     vec4 random_vectors[256];
@@ -99,12 +99,12 @@ void main(void)
     }
 
     // Calculate occlusion amount
-    float ao_amount = vec4(1.0 - occ / total);
+    vec4 ao_amount = vec4(1.0 - occ / total);
 
     // Get object color from color texture
     vec4 object_color =  textureLod(sColor, P, 0);
 
     // Mix in ambient color scaled by SSAO level
     color = object_level * object_color +
-            mix(vec4(0.2), vec4(ao_amount), ssao_level);
+            mix(vec4(0.2), ao_amount, ssao_level);
 }

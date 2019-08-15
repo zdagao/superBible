@@ -27,6 +27,27 @@
 #include <object.h>
 #include <vmath.h>
 
+static void checkShaderCompile(GLuint shader, const GLchar * desc)
+{
+	if (shader == 0) {
+		fprintf(stderr, "invalid shader.\n");
+		return;
+	}
+	char buffer[1024];
+	memset(buffer, 0, sizeof(buffer));
+	glGetShaderInfoLog(shader, 1024, NULL, buffer);
+	
+	if (strlen(buffer) != 0)
+		fprintf(stderr, "error happened in %s shader(%d): %s\n", desc, shader, buffer);
+}
+
+#define CheckGLErr() {checkGLErr(__LINE__);}
+static void checkGLErr(GLint line)
+{
+	for(GLenum err; (err = glGetError()) != GL_NO_ERROR;)
+		fprintf(stdout, "line %d: Error found 0x%04x\n", line, err);
+}
+
 // Random number generator
 static unsigned int seed = 0x13371337;
 
@@ -161,8 +182,8 @@ void ssao_app::startup()
     glGenVertexArrays(1, &quad_vao);
     glBindVertexArray(quad_vao);
 
-    object.load("media/objects/dragon.sbm");
-    cube.load("media/objects/cube.sbm");
+    object.load("../bin/media/objects/dragon.sbm");
+    cube.load("../bin/media/objects/cube.sbm");
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
@@ -218,7 +239,8 @@ void ssao_app::render(double currentTime)
     glClearBufferfv(GL_COLOR, 1, black);
     glClearBufferfv(GL_DEPTH, 0, &one);
 
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, points_buffer);
+	GLuint idx = glGetUniformBlockIndex(ssao_program, "SAMPLE_POINTS");
+    glBindBufferBase(GL_UNIFORM_BUFFER, idx, points_buffer);
 
     glUseProgram(render_program);
 
@@ -261,8 +283,10 @@ void ssao_app::render(double currentTime)
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, fbo_textures[0]);
+	glUniform1i(glGetUniformLocation(ssao_program, "sColor"), 0);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, fbo_textures[1]);
+	glUniform1i(glGetUniformLocation(ssao_program, "sNormalDepth"), 1);
 
     glDisable(GL_DEPTH_TEST);
     glBindVertexArray(quad_vao);
@@ -273,8 +297,10 @@ void ssao_app::load_shaders()
 {
     GLuint shaders[2];
 
-    shaders[0] = sb6::shader::load("media/shaders/ssao/render.vs.glsl", GL_VERTEX_SHADER);
-    shaders[1] = sb6::shader::load("media/shaders/ssao/render.fs.glsl", GL_FRAGMENT_SHADER);
+    shaders[0] = sb6::shader::load("../bin/media/shaders/ssao/render.vs.glsl", GL_VERTEX_SHADER);
+	checkShaderCompile(shaders[0], "render.vs");
+    shaders[1] = sb6::shader::load("../bin/media/shaders/ssao/render.fs.glsl", GL_FRAGMENT_SHADER);
+	checkShaderCompile(shaders[1], "render.fs");
 
     if (render_program)
         glDeleteProgram(render_program);
@@ -285,8 +311,10 @@ void ssao_app::load_shaders()
     uniforms.render.proj_matrix = glGetUniformLocation(render_program, "proj_matrix");
     uniforms.render.shading_level = glGetUniformLocation(render_program, "shading_level");
 
-    shaders[0] = sb6::shader::load("media/shaders/ssao/ssao.vs.glsl", GL_VERTEX_SHADER);
-    shaders[1] = sb6::shader::load("media/shaders/ssao/ssao.fs.glsl", GL_FRAGMENT_SHADER);
+    shaders[0] = sb6::shader::load("../bin/media/shaders/ssao/ssao.vs.glsl", GL_VERTEX_SHADER);
+	checkShaderCompile(shaders[0], "ssao.vs");
+	shaders[1] = sb6::shader::load("../bin/media/shaders/ssao/ssao.fs.glsl", GL_FRAGMENT_SHADER);
+	checkShaderCompile(shaders[1], "ssao.fs");
 
     ssao_program = sb6::program::link_from_shaders(shaders, 2, true);
 

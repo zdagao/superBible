@@ -26,6 +26,27 @@
 #include <object.h>
 #include <vmath.h>
 
+static void checkShaderCompile(GLuint shader, const GLchar * desc)
+{
+	if (shader == 0) {
+		fprintf(stderr, "invalid shader.\n");
+		return;
+	}
+	char buffer[1024];
+	memset(buffer, 0, sizeof(buffer));
+	glGetShaderInfoLog(shader, 1024, NULL, buffer);
+	
+	if (strlen(buffer) != 0)
+		fprintf(stderr, "error happened in %s shader(%d): %s\n", desc, shader, buffer);
+}
+
+#define CheckGLErr() {checkGLErr(__LINE__);}
+static void checkGLErr(GLint line)
+{
+	for(GLenum err; (err = glGetError()) != GL_NO_ERROR;)
+		fprintf(stdout, "line %d: Error found 0x%04x\n", line, err);
+}
+
 enum
 {
     NUM_DRAWS           = 50000
@@ -102,7 +123,8 @@ void multidrawindirect_app::startup()
 
     load_shaders();
 
-    object.load("media/objects/asteroids.sbm");
+
+    object.load("../bin/media/objects/asteroids.sbm");
 
     glGenBuffers(1, &indirect_draw_buffer);
     glBindBuffer(GL_DRAW_INDIRECT_BUFFER, indirect_draw_buffer);
@@ -110,12 +132,15 @@ void multidrawindirect_app::startup()
                  NUM_DRAWS * sizeof(DrawArraysIndirectCommand),
                  NULL,
                  GL_STATIC_DRAW);
+	CheckGLErr();
 
     DrawArraysIndirectCommand * cmd = (DrawArraysIndirectCommand *)
         glMapBufferRange(GL_DRAW_INDIRECT_BUFFER,
                          0,
                          NUM_DRAWS * sizeof(DrawArraysIndirectCommand),
                          GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+	
+	fprintf(stdout, "glMultiDrawArraysIndirect is supported after 4.3 version! cmd %p\n", cmd);
 
     for (i = 0; i < NUM_DRAWS; i++)
     {
@@ -221,8 +246,10 @@ void multidrawindirect_app::load_shaders()
 {
     GLuint shaders[2];
 
-    shaders[0] = sb6::shader::load("media/shaders/multidrawindirect/render.vs.glsl", GL_VERTEX_SHADER);
-    shaders[1] = sb6::shader::load("media/shaders/multidrawindirect/render.fs.glsl", GL_FRAGMENT_SHADER);
+    shaders[0] = sb6::shader::load("../bin/media/shaders/multidrawindirect/render.vs.glsl", GL_VERTEX_SHADER);
+	checkShaderCompile(shaders[0], "render.vs");
+    shaders[1] = sb6::shader::load("../bin/media/shaders/multidrawindirect/render.fs.glsl", GL_FRAGMENT_SHADER);
+	checkShaderCompile(shaders[1], "render.fs");
 
     if (render_program)
         glDeleteProgram(render_program);

@@ -373,7 +373,7 @@ void raytracer_app::render(double currentTime)
     glDrawBuffers(6, draw_buffers);
 	CheckGLErr();
 	GLenum en = glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER);
-	fprintf(stdout, "framebuffer state 0x%x 0x%x\n", en, GL_FRAMEBUFFER_COMPLETE);
+	//fprintf(stdout, "framebuffer state 0x%x 0x%x\n", en, GL_FRAMEBUFFER_COMPLETE);
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	CheckGLErr();
