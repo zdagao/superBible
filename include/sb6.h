@@ -137,7 +137,7 @@ public:
 
         gl3wInit();
 
-#ifdef _DEBUG
+#if 1//def _DEBUG
         fprintf(stderr, "VENDOR: %s\n", (char *)glGetString(GL_VENDOR));
         fprintf(stderr, "VERSION: %s\n", (char *)glGetString(GL_VERSION));
         fprintf(stderr, "RENDERER: %s\n", (char *)glGetString(GL_RENDERER));
@@ -154,6 +154,8 @@ public:
             {
                 glDebugMessageCallbackARB(debug_callback, this);
                 glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
+            } else {
+                fprintf(stdout, "unsupport setting debug message callback.\n");
             }
         }
 
@@ -246,6 +248,7 @@ public:
         OutputDebugStringA(message);
         OutputDebugStringA("\n");
 #endif /* _WIN32 */
+        fprintf(stdout, "%s \n", message);
     }
 
     static void getMousePosition(int& x, int& y)

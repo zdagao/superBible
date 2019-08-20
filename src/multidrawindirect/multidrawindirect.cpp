@@ -79,11 +79,19 @@ public:
         sb6::application::init();
 
         memcpy(info.title, title, sizeof(title));
+		info.flags.debug = 1;
     }
 
     void startup();
 
     void render(double currentTime);
+
+	void onDebugMessage(GLenum source,
+                                GLenum type,
+                                GLuint id,
+                                GLenum severity,
+                                GLsizei length,
+                                const GLchar* message);
 
 protected:
     void load_shaders();
@@ -247,9 +255,9 @@ void multidrawindirect_app::load_shaders()
     GLuint shaders[2];
 
     shaders[0] = sb6::shader::load("../bin/media/shaders/multidrawindirect/render.vs.glsl", GL_VERTEX_SHADER);
-	checkShaderCompile(shaders[0], "render.vs");
+	//checkShaderCompile(shaders[0], "render.vs");
     shaders[1] = sb6::shader::load("../bin/media/shaders/multidrawindirect/render.fs.glsl", GL_FRAGMENT_SHADER);
-	checkShaderCompile(shaders[1], "render.fs");
+	//checkShaderCompile(shaders[1], "render.fs");
 
     if (render_program)
         glDeleteProgram(render_program);
@@ -286,5 +294,16 @@ void multidrawindirect_app::onKey(int key, int action)
         }
     }
 }
+
+void multidrawindirect_app::onDebugMessage(GLenum source,
+                            GLenum type,
+                            GLuint id,
+                            GLenum severity,
+                            GLsizei length,
+                            const GLchar* message)
+{
+	fprintf(stderr, "%s \n", message);
+}
+
 
 DECLARE_MAIN(multidrawindirect_app)
